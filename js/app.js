@@ -11,6 +11,8 @@ class App {
         var animationLoopTimeInterval;
         var game;
         var canvas, context;
+        var mouseDown = false;
+
 
         console.log("App object is being constructed.");
 
@@ -28,6 +30,9 @@ class App {
                 context = canvas.getContext('2d');
                 console.log('Initialized canvas');
             }
+
+            canvas.addEventListener('mousedown', HandleMouseDown);
+            canvas.addEventListener('mouseup', HandleMouseUp);
 
             window.addEventListener('resize', ResizeCanvas, true);
             ResizeCanvas();
@@ -68,6 +73,25 @@ class App {
             game.Render(context, WIDTH, HEIGHT);
         }
         
+        function HandleMouseDown(e) {
+            if (mouseDown) {
+                console.log('You can only click one at a time');
+            }
+
+
+            if (e.x > GAME_X && 
+                e.y > GAME_Y && 
+                e.x < (GAME_X + GAME_SIZE) && 
+                e.y < (GAME_Y + GAME_SIZE)) {
+                    console.log('You clicked within the game area');
+                    game.HandleMouseDown(e);
+                }
+        }
+
+        function HandleMouseUp(e) {
+            mouseDown = false;
+        }
+
         Main();
 
         game.Start();

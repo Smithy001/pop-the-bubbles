@@ -23,6 +23,20 @@ class Game {
             }
         };
 
+        this.HandleMouseDown = function(e) {
+            let relx = e.x - this.left;
+            let rely = e.y - this.top;
+
+            if (relx < 0 || rely < 0) {
+                return;
+            }
+
+            let celx = Math.floor(relx / this.cell_width);
+            let cely = Math.floor(rely / this.cell_width);
+
+            board[celx][cely].HandleMouseDown(e, PopBubble);
+        }
+
         function CreateBoard() {
             board = []
             for (let i=0; i<board_rows; i++) {
@@ -32,6 +46,10 @@ class Game {
                 }
                 board.push(row);
             }
+        }
+
+        function PopBubble() {
+            console.log('You popped a bubble');
         }
 
         function AddStartingBubble() {
@@ -67,6 +85,12 @@ class Cell {
         this.addItem = function(item) {
             this.items.push(item);
         };
+
+        this.HandleMouseDown = function(e, callback) {
+            if (this.items.length > 0) {
+                callback();
+            }
+        }
     }
 }
 
