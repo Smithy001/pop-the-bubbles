@@ -15,7 +15,7 @@ class App {
         function Main() {
             SetupCanvas();
 
-            game = new Game(WIDTH, HEIGHT, GAME_ROWS, GAME_CELL_WIDTH, BUBBLE_COLOR);
+            game = new Game(0, 0, WIDTH, HEIGHT, GAME_ROWS, GAME_CELL_WIDTH, BUBBLE_COLOR);
 
             animationLoopTimeInterval = setInterval(AnimationLoop, 50);
         }

@@ -1,7 +1,7 @@
 console.log("Game class being imported.");
 
 class Game {
-    constructor(width, height, board_rows, cell_width, bubbleColor) {
+    constructor(top, left, width, height, board_rows, cell_width, bubbleColor) {
         var board;
 
         this.Start = function () {
@@ -12,8 +12,8 @@ class Game {
 
             for (let i=0; i<board_rows; i++) {
                 for (let j=0; j<board_rows; j++) {
-                    let x = (j * cell_width) + (cell_width*0.5);
-                    let y = (i * cell_width) + (cell_width*0.5);
+                    let x = top + (j * cell_width) + (cell_width*0.5);
+                    let y = left + (i * cell_width) + (cell_width*0.5);
                     board[i][j].Render(x, y, context);
                 }
             }
