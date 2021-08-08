@@ -6,4 +6,8 @@ function Game() {
     this.Start = function() {
         console.log("Game starting.");
     }
+
+    this.Render = function() {
+        console.log("Nothing to render yet.");
+    }
 }
