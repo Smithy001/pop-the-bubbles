@@ -11,9 +11,9 @@ function App(canvasId) {
     function Main() {
         SetupCanvas();
 
-        game = new Game();
+        game = new Game(WIDTH, HEIGHT);
 
-        animationLoopTimeInterval = setInterval(AnimationLoop, 500);
+        animationLoopTimeInterval = setInterval(AnimationLoop, 50);
     }
     
     function SetupCanvas() {
@@ -37,10 +37,10 @@ function App(canvasId) {
     }
 
     function AnimationLoop() {
-        context.fillStyle = '#c6e0ff';
+        context.fillStyle = '#f8fbff';
         context.fillRect(0, 0, WIDTH, HEIGHT);
 
-        game.Render();
+        game.Render(context, WIDTH, HEIGHT);
     }
     
     Main();
