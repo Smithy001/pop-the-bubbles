@@ -1,8 +1,8 @@
 class App {
     constructor(canvasId) {    
         var WIDTH, HEIGHT;
-        var GAME_ROWS = 9;
-        var GAME_CELL_WIDTH = 30;
+        var GAME_ROWS = 11;
+        var GAME_CELL_WIDTH = 80;
         var BACKGROUND_COLOR = '#f8fbff';
         var BUBBLE_COLOR = '#379af7';
 

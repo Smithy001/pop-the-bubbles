@@ -12,10 +12,9 @@ class Game {
 
             for (let i=0; i<board_rows; i++) {
                 for (let j=0; j<board_rows; j++) {
-                    for (let c=0; c<board[i][j].length; c++) {
-                        let b = board[i][j][c];
-                        b.Render(b.x, b.y, context);
-                    }
+                    let x = (j * cell_width) + (cell_width*0.5);
+                    let y = (i * cell_width) + (cell_width*0.5);
+                    board[i][j].Render(x, y, context);
                 }
             }
         };
@@ -25,7 +24,7 @@ class Game {
             for (let i=0; i<board_rows; i++) {
                 let row = [];
                 for (let j=0; j<board_rows; j++) {
-                    row.push([]);
+                    row.push(new Cell());
                 }
                 board.push(row);
             }
@@ -33,7 +32,11 @@ class Game {
 
         function AddStartingBubble() {
             let center = Math.floor(board_rows*0.5);
-            board[center][center].push(new Bubble(Math.floor(width * 0.5), Math.floor(height * 0.5), cell_width, bubbleColor));
+            board[center][center].addItem(new Bubble(Math.floor(width * 0.5), Math.floor(height * 0.5), cell_width, bubbleColor));
+            board[board_rows-1][board_rows-1].addItem(new Bubble(Math.floor(width * 0.5), Math.floor(height * 0.5), cell_width, bubbleColor));
+            board[0][0].addItem(new Bubble(Math.floor(width * 0.5), Math.floor(height * 0.5), cell_width, bubbleColor));
+            board[0][board_rows-1].addItem(new Bubble(Math.floor(width * 0.5), Math.floor(height * 0.5), cell_width, bubbleColor));
+            board[board_rows-1][0].addItem(new Bubble(Math.floor(width * 0.5), Math.floor(height * 0.5), cell_width, bubbleColor));
         }
 
         function Setup() {
@@ -43,6 +46,22 @@ class Game {
         }
         Setup();
     
+    }
+}
+
+class Cell {
+    constructor() {
+        this.items = [];
+
+        this.Render = function (x, y, context) {
+            for (let i=0; i<this.items.length; i++) {
+                this.items[i].Render(x, y, context);
+            }
+        };
+
+        this.addItem = function(item) {
+            this.items.push(item);
+        };
     }
 }
 
@@ -57,7 +76,7 @@ class Bubble {
             context.fillStyle = this.color;
             context.beginPath();
             context.moveTo(x, y);
-            context.arc(x, y, this.size, 0, Math.PI * 2, true);
+            context.arc(x, y, this.size*0.5, 0, Math.PI * 2, true);
             context.fill();
         };
     }
