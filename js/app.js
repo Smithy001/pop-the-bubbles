@@ -1,6 +1,10 @@
 class App {
     constructor(canvasId) {    
         var WIDTH, HEIGHT;
+        var GAME_ROWS = 9;
+        var GAME_CELL_WIDTH = 30;
+        var BACKGROUND_COLOR = '#f8fbff';
+        var BUBBLE_COLOR = '#379af7';
 
         var animationLoopTimeInterval;
         var game;
@@ -11,7 +15,7 @@ class App {
         function Main() {
             SetupCanvas();
 
-            game = new Game(WIDTH, HEIGHT);
+            game = new Game(WIDTH, HEIGHT, GAME_ROWS, GAME_CELL_WIDTH, BUBBLE_COLOR);
 
             animationLoopTimeInterval = setInterval(AnimationLoop, 50);
         }
@@ -37,7 +41,7 @@ class App {
         }
 
         function AnimationLoop() {
-            context.fillStyle = '#f8fbff';
+            context.fillStyle = BACKGROUND_COLOR;
             context.fillRect(0, 0, WIDTH, HEIGHT);
 
             game.Render(context, WIDTH, HEIGHT);
