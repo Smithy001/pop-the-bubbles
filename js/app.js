@@ -3,7 +3,7 @@ class App {
         var WIDTH = window.innerWidth;
         var HEIGHT = window.innerHeight;
         var GAME_ROWS = 9;
-        var GAME_CELL_WIDTH;
+        var GAME_CELL_WIDTH, GAME_SIZE, GAME_X, GAME_Y;
         var GAME_MARGIN = 75;
         var BACKGROUND_COLOR = '#f8fbff';
         var BUBBLE_COLOR = '#379af7';
@@ -34,16 +34,7 @@ class App {
         }
 
         function SetupGame() {
-            if (WIDTH > HEIGHT) {
-                GAME_CELL_WIDTH = (HEIGHT - GAME_MARGIN*2) / GAME_ROWS;
-            } else {
-                GAME_CELL_WIDTH = (WIDTH - GAME_MARGIN*2) / GAME_ROWS;
-            }
-            let gameBoardSize = GAME_CELL_WIDTH * GAME_ROWS;
-            let gameBoardX = WIDTH*0.5 - gameBoardSize*0.5;
-            let gameBoardY = HEIGHT*0.5 - gameBoardSize*0.5;
-
-            game = new Game(gameBoardX, gameBoardY, GAME_ROWS, GAME_CELL_WIDTH, BUBBLE_COLOR);
+            game = new Game(GAME_X, GAME_Y, GAME_ROWS, GAME_CELL_WIDTH, BUBBLE_COLOR);
         }
 
         function ResizeCanvas() {
@@ -52,6 +43,22 @@ class App {
 
             canvas.width = WIDTH;
             canvas.height = HEIGHT;
+
+            if (WIDTH > HEIGHT) {
+                GAME_CELL_WIDTH = (HEIGHT - GAME_MARGIN*2) / GAME_ROWS;
+            } else {
+                GAME_CELL_WIDTH = (WIDTH - GAME_MARGIN*2) / GAME_ROWS;
+            }
+            GAME_SIZE = GAME_CELL_WIDTH * GAME_ROWS;
+            GAME_Y = HEIGHT*0.5 - GAME_SIZE*0.5;
+            GAME_X = WIDTH*0.5 - GAME_SIZE*0.5;
+
+            if (game) {
+                game.left = GAME_X;
+                game.top = GAME_Y;
+                game.cell_width = GAME_CELL_WIDTH;
+            }
+            
         }
 
         function AnimationLoop() {
