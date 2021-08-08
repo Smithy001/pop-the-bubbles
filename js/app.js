@@ -1,8 +1,10 @@
 class App {
     constructor(canvasId) {    
-        var WIDTH, HEIGHT;
-        var GAME_ROWS = 11;
-        var GAME_CELL_WIDTH = 80;
+        var WIDTH = window.innerWidth;
+        var HEIGHT = window.innerHeight;
+        var GAME_ROWS = 9;
+        var GAME_CELL_WIDTH;
+        var GAME_MARGIN = 75;
         var BACKGROUND_COLOR = '#f8fbff';
         var BUBBLE_COLOR = '#379af7';
 
@@ -14,9 +16,8 @@ class App {
 
         function Main() {
             SetupCanvas();
-
-            game = new Game(0, 0, WIDTH, HEIGHT, GAME_ROWS, GAME_CELL_WIDTH, BUBBLE_COLOR);
-
+            SetupGame();
+    
             animationLoopTimeInterval = setInterval(AnimationLoop, 50);
         }
         
@@ -30,6 +31,19 @@ class App {
 
             window.addEventListener('resize', ResizeCanvas, true);
             ResizeCanvas();
+        }
+
+        function SetupGame() {
+            if (WIDTH > HEIGHT) {
+                GAME_CELL_WIDTH = (HEIGHT - GAME_MARGIN*2) / GAME_ROWS;
+            } else {
+                GAME_CELL_WIDTH = (WIDTH - GAME_MARGIN*2) / GAME_ROWS;
+            }
+            let gameBoardSize = GAME_CELL_WIDTH * GAME_ROWS;
+            let gameBoardX = WIDTH*0.5 - gameBoardSize*0.5;
+            let gameBoardY = HEIGHT*0.5 - gameBoardSize*0.5;
+
+            game = new Game(gameBoardX, gameBoardY, GAME_ROWS, GAME_CELL_WIDTH, BUBBLE_COLOR);
         }
 
         function ResizeCanvas() {

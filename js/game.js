@@ -1,7 +1,7 @@
 console.log("Game class being imported.");
 
 class Game {
-    constructor(top, left, width, height, board_rows, cell_width, bubbleColor) {
+    constructor(top, left, board_rows, cell_width, bubbleColor) {
         var board;
 
         this.Start = function () {
@@ -32,11 +32,12 @@ class Game {
 
         function AddStartingBubble() {
             let center = Math.floor(board_rows*0.5);
-            board[center][center].addItem(new Bubble(Math.floor(width * 0.5), Math.floor(height * 0.5), cell_width, bubbleColor));
-            board[board_rows-1][board_rows-1].addItem(new Bubble(Math.floor(width * 0.5), Math.floor(height * 0.5), cell_width, bubbleColor));
-            board[0][0].addItem(new Bubble(Math.floor(width * 0.5), Math.floor(height * 0.5), cell_width, bubbleColor));
-            board[0][board_rows-1].addItem(new Bubble(Math.floor(width * 0.5), Math.floor(height * 0.5), cell_width, bubbleColor));
-            board[board_rows-1][0].addItem(new Bubble(Math.floor(width * 0.5), Math.floor(height * 0.5), cell_width, bubbleColor));
+  
+            board[center][center].addItem(new Bubble(cell_width, bubbleColor));
+            board[board_rows-1][board_rows-1].addItem(new Bubble(cell_width, bubbleColor));
+            board[0][0].addItem(new Bubble(cell_width, bubbleColor));
+            board[0][board_rows-1].addItem(new Bubble(cell_width, bubbleColor));
+            board[board_rows-1][0].addItem(new Bubble(cell_width, bubbleColor));
         }
 
         function Setup() {
@@ -66,9 +67,7 @@ class Cell {
 }
 
 class Bubble {
-    constructor(x, y, size, color) {
-        this.x = x;
-        this.y = y;
+    constructor(size, color) {
         this.color = color;
         this.size = size;
 
