@@ -5,7 +5,10 @@ class App {
         var GAME_ROWS = 9;
         var GAME_CELL_WIDTH, GAME_SIZE, GAME_X, GAME_Y;
         var GAME_MARGIN = 75;
+        var BORDER_WIDTH = 5;
         var BACKGROUND_COLOR = '#f8fbff';
+        var MARGIN_COLOR = '#fff';
+        var BORDER_COLOR = '#6c6c6c';
         var BUBBLE_COLOR = '#379af7';
 
         var animationLoopTimeInterval;
@@ -67,8 +70,22 @@ class App {
         }
 
         function AnimationLoop() {
-            context.fillStyle = BACKGROUND_COLOR;
+            context.fillStyle = MARGIN_COLOR;
             context.fillRect(0, 0, WIDTH, HEIGHT);
+
+            context.fillStyle = BORDER_COLOR;
+            context.fillRect(
+                GAME_X-BORDER_WIDTH, 
+                GAME_Y-BORDER_WIDTH, 
+                GAME_SIZE+BORDER_WIDTH*2, 
+                GAME_SIZE+BORDER_WIDTH*2);
+
+            context.fillStyle = BACKGROUND_COLOR;
+            context.fillRect(
+                GAME_X, 
+                GAME_Y, 
+                GAME_SIZE, 
+                GAME_SIZE);
 
             game.Render(context, WIDTH, HEIGHT);
             let score = document.getElementById('score');

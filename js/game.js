@@ -76,6 +76,7 @@ class Game {
                 return;
             }
 
+            let energySpawlLostFactor = 0.2;
             let energyLost = b.growthFactor*0.7;
             b.growthFactor -= energyLost;
 
@@ -85,7 +86,7 @@ class Game {
                 if (!b) {
                     board[row-1][col].AddItem(new Bubble(bubbleColor));
                 } else {
-                    b.growthFactor += energyLost*0.1;
+                    b.growthFactor += energyLost*energySpawlLostFactor;
                 }
             }
 
@@ -95,7 +96,7 @@ class Game {
                 if (!b) {
                     board[row][col+1].AddItem(new Bubble(bubbleColor));
                 } else {
-                    b.growthFactor += energyLost*0.1;
+                    b.growthFactor += energyLost*energySpawlLostFactor;
                 }
             }
 
@@ -105,7 +106,7 @@ class Game {
                 if (!b) {
                     board[row+1][col].AddItem(new Bubble(bubbleColor));
                 } else {
-                    b.growthFactor += energyLost*0.1;
+                    b.growthFactor += energyLost*energySpawlLostFactor;
                 }
             }
             
@@ -115,7 +116,7 @@ class Game {
                 if (!b) {
                     board[row][col-1].AddItem(new Bubble(bubbleColor));
                 } else {
-                    b.growthFactor += energyLost*0.1;
+                    b.growthFactor += energyLost*energySpawlLostFactor;
                 }
             }
 
@@ -174,7 +175,7 @@ class Cell {
 class Bubble {
     constructor(color) {
         this.color = color;
-        this.growthRateMin = 0.005;
+        this.growthRateMin = 0.01;
         this.growthRateMax = 0.5;
         this.growthFactor = 0.1;
 
