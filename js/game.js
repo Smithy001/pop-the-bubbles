@@ -2,7 +2,7 @@ console.log("Game class being imported.");
 
 class Game {
     constructor(left, top, board_rows, cell_width, bubbleColor) {
-        var board;
+        var board, eventLoop;
 
         this.top = top;
         this.left = left;
@@ -10,6 +10,8 @@ class Game {
 
         this.Start = function () {
             console.log("Game starting.");
+
+            eventLoop = setInterval(EventLoop, 100);
         };
 
         this.Render = function (context) {
@@ -35,6 +37,16 @@ class Game {
             let cely = Math.floor(rely / this.cell_width);
 
             board[cely][celx].HandleMouseDown(e, PopBubble);
+        }
+
+        function EventLoop() {
+            for (let i=0; i<board_rows; i++) {
+                for (let j=0; j<board_rows; j++) {
+                    if (board[i][j].items[0]) {
+                        board[i][j].items[0].Grow();
+                    }
+                }
+            }
         }
 
         function CreateBoard() {
@@ -94,10 +106,6 @@ class Game {
             let center = Math.floor(board_rows*0.5);
   
             board[center][center].AddItem(new Bubble(bubbleColor));
-            board[board_rows-1][board_rows-1].AddItem(new Bubble(bubbleColor));
-            board[0][0].AddItem(new Bubble(bubbleColor));
-            board[0][board_rows-1].AddItem(new Bubble( bubbleColor));
-            board[board_rows-1][0].AddItem(new Bubble(bubbleColor));
         }
 
         function Setup() {
@@ -141,13 +149,26 @@ class Cell {
 class Bubble {
     constructor(color) {
         this.color = color;
+        this.growthRateMin = 0.1;
+        this.growthRateMax = 0.5;
+        this.growthFactor = 0.1;
 
         this.Render = function (x, y, size, context) {
             context.fillStyle = this.color;
             context.beginPath();
             context.moveTo(x, y);
-            context.arc(x, y, size*0.5, 0, Math.PI * 2, true);
+            context.arc(x, y, size*0.5*this.growthFactor, 0, Math.PI * 2, true);
             context.fill();
         };
+
+        this.Grow = function (maxSize) {
+            if (this.growthFactor < 1) {
+                this.growthFactor += (this.growthRateMin * this.growthFactor);
+            }
+
+            if (this.growthFactor > 1) {
+                this.growthFactor = 1;
+            }
+        }
     }
 }
