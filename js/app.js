@@ -80,7 +80,6 @@ class App {
                 console.log('You can only click one at a time');
             }
 
-
             if (e.x > GAME_X && 
                 e.y > GAME_Y && 
                 e.x < (GAME_X + GAME_SIZE) && 

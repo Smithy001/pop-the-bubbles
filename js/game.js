@@ -4,7 +4,8 @@ class Game {
     constructor(left, top, board_rows, cell_width, bubbleColor) {
         var board, eventLoop;
         var score = 0;
-        
+        var minBubblePopGrowthFactor = 0.2;
+
         this.top = top;
         this.left = left;
         this.cell_width = cell_width;
@@ -69,13 +70,22 @@ class Game {
         }
 
         function PopBubble(row, col) {
-            let b;
+            let b = board[row][col].GetItem();
+
+            if (b.growthFactor < minBubblePopGrowthFactor) {
+                return;
+            }
+
+            let energyLost = b.growthFactor*0.7;
+            b.growthFactor -= energyLost;
 
             // Up
             if (row-1 >= 0) {
                 b = board[row-1][col].GetItem();
                 if (!b) {
                     board[row-1][col].AddItem(new Bubble(bubbleColor));
+                } else {
+                    b.growthFactor += energyLost*0.1;
                 }
             }
 
@@ -84,6 +94,8 @@ class Game {
                 b = board[row][col+1].GetItem();
                 if (!b) {
                     board[row][col+1].AddItem(new Bubble(bubbleColor));
+                } else {
+                    b.growthFactor += energyLost*0.1;
                 }
             }
 
@@ -92,6 +104,8 @@ class Game {
                 b = board[row+1][col].GetItem();
                 if (!b) {
                     board[row+1][col].AddItem(new Bubble(bubbleColor));
+                } else {
+                    b.growthFactor += energyLost*0.1;
                 }
             }
             
@@ -100,6 +114,8 @@ class Game {
                 b = board[row][col-1].GetItem();
                 if (!b) {
                     board[row][col-1].AddItem(new Bubble(bubbleColor));
+                } else {
+                    b.growthFactor += energyLost*0.1;
                 }
             }
 
@@ -114,6 +130,7 @@ class Game {
             let center = Math.floor(board_rows*0.5);
   
             board[center][center].AddItem(new Bubble(bubbleColor));
+            board[center][center].items[0].growthFactor = 0.2;
         }
 
         function Setup() {
@@ -157,7 +174,7 @@ class Cell {
 class Bubble {
     constructor(color) {
         this.color = color;
-        this.growthRateMin = 0.1;
+        this.growthRateMin = 0.005;
         this.growthRateMax = 0.5;
         this.growthFactor = 0.1;
 
