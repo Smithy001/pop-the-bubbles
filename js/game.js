@@ -3,10 +3,15 @@ console.log("Game class being imported.");
 class Game {
     constructor(left, top, board_rows, cell_width, bubbleColor) {
         var board, eventLoop;
-
+        var score = 0;
+        
         this.top = top;
         this.left = left;
         this.cell_width = cell_width;
+
+        this.GetScore = function () {
+            return score;
+        };
 
         this.Start = function () {
             console.log("Game starting.");
@@ -40,13 +45,16 @@ class Game {
         }
 
         function EventLoop() {
+            let new_score = 0;
             for (let i=0; i<board_rows; i++) {
                 for (let j=0; j<board_rows; j++) {
                     if (board[i][j].items[0]) {
                         board[i][j].items[0].Grow();
+                        new_score += (board[i][j].items[0].growthFactor*10)
                     }
                 }
             }
+            score = Math.floor(new_score);
         }
 
         function CreateBoard() {

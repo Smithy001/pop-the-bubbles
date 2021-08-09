@@ -71,6 +71,8 @@ class App {
             context.fillRect(0, 0, WIDTH, HEIGHT);
 
             game.Render(context, WIDTH, HEIGHT);
+            let score = document.getElementById('score');
+            score.textContent = game.GetScore();
         }
         
         function HandleMouseDown(e) {
