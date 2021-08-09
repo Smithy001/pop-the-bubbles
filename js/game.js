@@ -34,7 +34,7 @@ class Game {
             let celx = Math.floor(relx / this.cell_width);
             let cely = Math.floor(rely / this.cell_width);
 
-            board[celx][cely].HandleMouseDown(e, PopBubble);
+            board[cely][celx].HandleMouseDown(e, PopBubble);
         }
 
         function CreateBoard() {
@@ -42,24 +42,62 @@ class Game {
             for (let i=0; i<board_rows; i++) {
                 let row = [];
                 for (let j=0; j<board_rows; j++) {
-                    row.push(new Cell());
+                    row.push(new Cell(i, j));
                 }
                 board.push(row);
             }
         }
 
-        function PopBubble() {
-            console.log('You popped a bubble');
+        function PopBubble(row, col) {
+            let b;
+
+            // Up
+            if (row-1 >= 0) {
+                b = board[row-1][col].GetItem();
+                if (!b) {
+                    board[row-1][col].AddItem(new Bubble(bubbleColor));
+                }
+            }
+
+            // Right
+            if (col+1 < (board_rows)) {
+                b = board[row][col+1].GetItem();
+                if (!b) {
+                    board[row][col+1].AddItem(new Bubble(bubbleColor));
+                }
+            }
+
+            // Down
+            if (row+1 < (board_rows)) {
+                b = board[row+1][col].GetItem();
+                if (!b) {
+                    board[row+1][col].AddItem(new Bubble(bubbleColor));
+                }
+            }
+            
+            // Right
+            if (col-1 >= 0) {
+                b = board[row][col-1].GetItem();
+                if (!b) {
+                    board[row][col-1].AddItem(new Bubble(bubbleColor));
+                }
+            }
+
+            console.log('You popped a bubble at ' + row + ' ' + col);
+        }
+
+        function CheckCell(row, col) {
+            
         }
 
         function AddStartingBubble() {
             let center = Math.floor(board_rows*0.5);
   
-            board[center][center].addItem(new Bubble(bubbleColor));
-            board[board_rows-1][board_rows-1].addItem(new Bubble(bubbleColor));
-            board[0][0].addItem(new Bubble(bubbleColor));
-            board[0][board_rows-1].addItem(new Bubble( bubbleColor));
-            board[board_rows-1][0].addItem(new Bubble(bubbleColor));
+            board[center][center].AddItem(new Bubble(bubbleColor));
+            board[board_rows-1][board_rows-1].AddItem(new Bubble(bubbleColor));
+            board[0][0].AddItem(new Bubble(bubbleColor));
+            board[0][board_rows-1].AddItem(new Bubble( bubbleColor));
+            board[board_rows-1][0].AddItem(new Bubble(bubbleColor));
         }
 
         function Setup() {
@@ -73,8 +111,10 @@ class Game {
 }
 
 class Cell {
-    constructor() {
+    constructor(row, col) {
         this.items = [];
+        this.row = row;
+        this.col = col;
 
         this.Render = function (x, y, size, context) {
             for (let i=0; i<this.items.length; i++) {
@@ -82,13 +122,17 @@ class Cell {
             }
         };
 
-        this.addItem = function(item) {
+        this.GetItem = function() {
+            return this.items[0];
+        }
+
+        this.AddItem = function(item) {
             this.items.push(item);
         };
 
         this.HandleMouseDown = function(e, callback) {
             if (this.items.length > 0) {
-                callback();
+                callback(this.row, this.col);
             }
         }
     }
