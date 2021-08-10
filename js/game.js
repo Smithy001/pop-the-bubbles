@@ -5,6 +5,10 @@ class Game {
         var board, eventLoop;
         var score = 0;
         var minBubblePopGrowthFactor = 0.2;
+        var defaultBubbleGrowthFactor = 0.1;
+
+        var bubblesMax = board_rows * board_rows;
+        var bubblesCount = 0;
 
         this.top = top;
         this.left = left;
@@ -50,7 +54,7 @@ class Game {
             for (let i=0; i<board_rows; i++) {
                 for (let j=0; j<board_rows; j++) {
                     if (board[i][j].items[0]) {
-                        board[i][j].items[0].Grow();
+                        board[i][j].items[0].Grow(1, 1-(bubblesCount/bubblesMax));
                         new_score += (board[i][j].items[0].growthFactor*10)
                     }
                 }
@@ -84,7 +88,7 @@ class Game {
             if (row-1 >= 0) {
                 b = board[row-1][col].GetItem();
                 if (!b) {
-                    board[row-1][col].AddItem(new Bubble(bubbleColor));
+                    AddBubble(row-1, col, bubbleColor, defaultBubbleGrowthFactor);
                 } else {
                     b.growthFactor += energyLost*energySpawlLostFactor;
                 }
@@ -94,7 +98,7 @@ class Game {
             if (col+1 < (board_rows)) {
                 b = board[row][col+1].GetItem();
                 if (!b) {
-                    board[row][col+1].AddItem(new Bubble(bubbleColor));
+                    AddBubble(row, col+1, bubbleColor, defaultBubbleGrowthFactor);
                 } else {
                     b.growthFactor += energyLost*energySpawlLostFactor;
                 }
@@ -104,7 +108,7 @@ class Game {
             if (row+1 < (board_rows)) {
                 b = board[row+1][col].GetItem();
                 if (!b) {
-                    board[row+1][col].AddItem(new Bubble(bubbleColor));
+                    AddBubble(row+1, col, bubbleColor, defaultBubbleGrowthFactor);
                 } else {
                     b.growthFactor += energyLost*energySpawlLostFactor;
                 }
@@ -114,7 +118,7 @@ class Game {
             if (col-1 >= 0) {
                 b = board[row][col-1].GetItem();
                 if (!b) {
-                    board[row][col-1].AddItem(new Bubble(bubbleColor));
+                    AddBubble(row, col-1, bubbleColor, defaultBubbleGrowthFactor);
                 } else {
                     b.growthFactor += energyLost*energySpawlLostFactor;
                 }
@@ -130,8 +134,12 @@ class Game {
         function AddStartingBubble() {
             let center = Math.floor(board_rows*0.5);
   
-            board[center][center].AddItem(new Bubble(bubbleColor));
-            board[center][center].items[0].growthFactor = 0.2;
+            AddBubble(center, center, bubbleColor, defaultBubbleGrowthFactor * 2)
+        }
+
+        function AddBubble(x, y, color, growthFactor) {
+            board[x][y].AddItem(new Bubble(color, growthFactor));
+            bubblesCount += 1;
         }
 
         function Setup() {
@@ -173,11 +181,11 @@ class Cell {
 }
 
 class Bubble {
-    constructor(color) {
+    constructor(color, growthFactor) {
         this.color = color;
         this.growthRateMin = 0.01;
         this.growthRateMax = 0.5;
-        this.growthFactor = 0.1;
+        this.growthFactor = growthFactor;
 
         this.Render = function (x, y, size, context) {
             context.fillStyle = this.color;
@@ -187,13 +195,13 @@ class Bubble {
             context.fill();
         };
 
-        this.Grow = function (maxSize) {
-            if (this.growthFactor < 1) {
-                this.growthFactor += (this.growthRateMin * this.growthFactor);
+        this.Grow = function (maxSize, dimFactor) {
+            if (this.growthFactor < maxSize) {
+                this.growthFactor += (this.growthRateMin * this.growthFactor * dimFactor);
             }
 
-            if (this.growthFactor > 1) {
-                this.growthFactor = 1;
+            if (this.growthFactor > maxSize) {
+                this.growthFactor = maxSize;
             }
         }
     }
