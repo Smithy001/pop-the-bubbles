@@ -45,11 +45,6 @@ class App {
             canvas.addEventListener('mouseup', HandleMouseUp);
             canvas.addEventListener('mousemove', HandleMouseMove);
 
-            
-            
-            //document.addEventListener('touchstart', function touchstart(e) {e.preventDefault()});
-            //document.addEventListener('touchmove', function touchstart(e) {e.preventDefault()});
-            
             window.addEventListener('resize', ResizeCanvas, true);
             ResizeCanvas();
         }
@@ -126,7 +121,7 @@ class App {
 
             mouseMoveLimit = true
             setTimeout(function() {mouseMoveLimit = false;}, 50);
-            CheckGameEvent(e.x, e.ye);   
+            CheckGameEvent(e.x, e.y);   
         }
 
         function HandleTouchStart(e) {
