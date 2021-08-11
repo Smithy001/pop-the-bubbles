@@ -14,6 +14,8 @@ class Game {
         this.left = left;
         this.cell_width = cell_width;
 
+        var poppedAlready = {};
+
         this.GetScore = function () {
             return score;
         };
@@ -46,7 +48,17 @@ class Game {
             let celx = Math.floor(relx / this.cell_width);
             let cely = Math.floor(rely / this.cell_width);
 
+            if (poppedAlready.hasOwnProperty(cely+','+celx) == true) {
+                console.log('Already popped a bubble at ' + cely + ' ' + celx);
+                console.log(poppedAlready);
+                return;
+            }
+
             board[cely][celx].HandleMouseDown(e, PopBubble);
+        }
+
+        this.HandleMouseUp = function(e) {
+            poppedAlready = {};
         }
 
         function EventLoop() {
@@ -79,6 +91,8 @@ class Game {
             if (b.growthFactor < minBubblePopGrowthFactor) {
                 return;
             }
+
+            //poppedAlready[row+','+col] = true;
 
             let energySpawlLostFactor = 0.2;
             let energyLost = b.growthFactor*0.7;

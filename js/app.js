@@ -15,7 +15,7 @@ class App {
         var game;
         var canvas, context;
         var mouseDown = false;
-
+        var mouseMoveLimit = false;
 
         console.log("App object is being constructed.");
 
@@ -35,8 +35,15 @@ class App {
             }
 
             canvas.addEventListener('mousedown', HandleMouseDown);
+            canvas.addEventListener('touchstart', HandleMouseDown);
             canvas.addEventListener('mouseup', HandleMouseUp);
+            canvas.addEventListener('touchend', HandleMouseUp);
+            canvas.addEventListener('mousemove', HandleMouseMove);
+            canvas.addEventListener('touchmove', HandleMouseMove);
 
+            //document.addEventListener('touchstart', function touchstart(e) {e.preventDefault()});
+            //document.addEventListener('touchmove', function touchstart(e) {e.preventDefault()});
+            
             window.addEventListener('resize', ResizeCanvas, true);
             ResizeCanvas();
         }
@@ -95,8 +102,28 @@ class App {
         function HandleMouseDown(e) {
             if (mouseDown) {
                 console.log('You can only click one at a time');
+                return;
             }
+            mouseDown = true;
+            CheckGameEvent(e);
+        }
 
+        function HandleMouseUp(e) {
+            mouseDown = false;
+            mouseMoveLimit = false;
+            game.HandleMouseUp(e);
+        }
+
+        function HandleMouseMove(e) {
+            if (!mouseDown) { return; }
+            if (mouseMoveLimit == true) { return; }
+
+            mouseMoveLimit = true
+            setTimeout(function() {mouseMoveLimit = false;}, 50);
+            CheckGameEvent(e);   
+        }
+
+        function CheckGameEvent(e) {
             if (e.x > GAME_X && 
                 e.y > GAME_Y && 
                 e.x < (GAME_X + GAME_SIZE) && 
@@ -104,10 +131,6 @@ class App {
                     console.log('You clicked within the game area');
                     game.HandleMouseDown(e);
                 }
-        }
-
-        function HandleMouseUp(e) {
-            mouseDown = false;
         }
 
         Main();
