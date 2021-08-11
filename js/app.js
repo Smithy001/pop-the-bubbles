@@ -17,6 +17,8 @@ class App {
         var mouseDown = false;
         var mouseMoveLimit = false;
 
+        var currentTouches = [];
+
         console.log("App object is being constructed.");
 
         function Main() {
@@ -34,13 +36,17 @@ class App {
                 console.log('Initialized canvas');
             }
 
-            canvas.addEventListener('mousedown', HandleMouseDown);
-            canvas.addEventListener('touchstart', HandleMouseDown);
-            canvas.addEventListener('mouseup', HandleMouseUp);
-            canvas.addEventListener('touchend', HandleMouseUp);
-            canvas.addEventListener('mousemove', HandleMouseMove);
-            canvas.addEventListener('touchmove', HandleMouseMove);
+            canvas.addEventListener('touchstart', HandleTouchStart);
+            canvas.addEventListener('touchend', HandleTouchEnd);
+            canvas.addEventListener('touchcancel', HandleTouchCancel);
+            canvas.addEventListener('touchmove', HandleTouchMove);
 
+            canvas.addEventListener('mousedown', HandleMouseDown);
+            canvas.addEventListener('mouseup', HandleMouseUp);
+            canvas.addEventListener('mousemove', HandleMouseMove);
+
+            
+            
             //document.addEventListener('touchstart', function touchstart(e) {e.preventDefault()});
             //document.addEventListener('touchmove', function touchstart(e) {e.preventDefault()});
             
@@ -105,13 +111,13 @@ class App {
                 return;
             }
             mouseDown = true;
-            CheckGameEvent(e);
+            CheckGameEvent(e.x, e.y);
         }
 
         function HandleMouseUp(e) {
             mouseDown = false;
             mouseMoveLimit = false;
-            game.HandleMouseUp(e);
+            game.HandleMouseUp();
         }
 
         function HandleMouseMove(e) {
@@ -120,17 +126,94 @@ class App {
 
             mouseMoveLimit = true
             setTimeout(function() {mouseMoveLimit = false;}, 50);
-            CheckGameEvent(e);   
+            CheckGameEvent(e.x, e.ye);   
         }
 
-        function CheckGameEvent(e) {
-            if (e.x > GAME_X && 
-                e.y > GAME_Y && 
-                e.x < (GAME_X + GAME_SIZE) && 
-                e.y < (GAME_Y + GAME_SIZE)) {
-                    console.log('You clicked within the game area');
-                    game.HandleMouseDown(e);
+        function HandleTouchStart(e) {
+            e.preventDefault();
+            console.log("touchstart.");
+            var touches = e.changedTouches;
+          
+            console.log(touches);
+
+            for (var i = 0; i < touches.length; i++) {
+              console.log("touchstart:" + i + "...");
+              currentTouches.push(copyTouch(touches[i]));
+              CheckGameEvent(touches[i].clientX, touches[i].clientY);
+            }
+        }
+        
+        function HandleTouchEnd(e) {
+            e.preventDefault();
+            console.log("touchend");
+            
+            var touches = e.changedTouches;
+
+            for (var i = 0; i < touches.length; i++) {
+            
+                var idx = currentTouchIndexById(touches[i].identifier);
+
+                if (idx >= 0) {
+                    currentTouches.splice(idx, 1);  // remove it; we're done
+                } else {
+                    console.log("can't figure out which touch to end");
                 }
+            }
+            game.HandleMouseUp();
+        }
+
+        function HandleTouchCancel(e) {
+            e.preventDefault();
+            console.log("touchcancel.");
+            var touches = e.changedTouches;
+
+            for (var i = 0; i < touches.length; i++) {
+                var idx = currentTouchIndexById(touches[i].identifier);
+                currentTouches.splice(idx, 1);  // remove it; we're done
+            }
+            game.HandleMouseUp();
+        }
+
+        function HandleTouchMove(e) {
+            e.preventDefault();
+            
+            var touches = e.changedTouches;
+
+            for (var i = 0; i < touches.length; i++) {
+                var idx = currentTouchIndexById(touches[i].identifier);
+
+                if (idx >= 0) {
+                    console.log("continuing touch "+idx);
+                    CheckGameEvent(touches[i].clientX, touches[i].clientY)
+                } else {
+                    console.log("can't figure out which touch to continue");
+                }
+            }
+        }
+
+        function CheckGameEvent(x, y) {
+            if (x > GAME_X && 
+                y > GAME_Y && 
+                x < (GAME_X + GAME_SIZE) && 
+                y < (GAME_Y + GAME_SIZE)) {
+                    console.log('You clicked within the game area');
+                    game.HandleMouseDown(x, y);
+                }
+        }
+
+        function currentTouchIndexById(idToFind) {
+            for (var i = 0; i < currentTouches.length; i++) {
+                var id = currentTouches[i].identifier;
+            
+                if (id == idToFind) {
+                return i;
+                }
+            }
+            return -1;    // not found
+        }
+
+        function copyTouch({ identifier, pageX, pageY }) {
+            return { identifier, pageX, pageY };
         }
 
         Main();

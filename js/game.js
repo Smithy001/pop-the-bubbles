@@ -37,9 +37,9 @@ class Game {
             }
         };
 
-        this.HandleMouseDown = function(e) {
-            let relx = e.x - this.left;
-            let rely = e.y - this.top;
+        this.HandleMouseDown = function(x, y) {
+            let relx = x - this.left;
+            let rely = y - this.top;
 
             if (relx < 0 || rely < 0) {
                 return;
@@ -54,10 +54,10 @@ class Game {
                 return;
             }
 
-            board[cely][celx].HandleMouseDown(e, PopBubble);
+            board[cely][celx].HandleMouseDown(x, y, PopBubble);
         }
 
-        this.HandleMouseUp = function(e) {
+        this.HandleMouseUp = function() {
             poppedAlready = {};
         }
 
@@ -186,7 +186,7 @@ class Cell {
             this.items.push(item);
         };
 
-        this.HandleMouseDown = function(e, callback) {
+        this.HandleMouseDown = function(x, y, callback) {
             if (this.items.length > 0) {
                 callback(this.row, this.col);
             }
