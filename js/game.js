@@ -128,15 +128,19 @@ class Game {
                 }
             }
             
-            // Right
-            if (col-1 >= 0) {
-                b = board[row][col-1].GetItem();
-                if (!b) {
-                    AddBubble(row, col-1, bubbleColor, defaultBubbleGrowthFactor);
-                } else {
-                    b.growthFactor += energyLost*energySpawlLostFactor;
-                }
+        function CreateBubble(row, col, energy) {
+            if (row > board_rows) { return; }
+            if (row < 0) { return; }
+            if (col > board_rows) { return; }
+            if (col < 0) { return; }
+
+            let b = board[row][col].GetItem();
+            if (!b) {
+                AddBubble(row, col, bubbleColor, defaultBubbleGrowthFactor);
+            } else {
+                b.growthFactor += energy;
             }
+        }
 
             console.log('You popped a bubble at ' + row + ' ' + col);
         }
