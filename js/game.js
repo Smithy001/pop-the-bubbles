@@ -5,7 +5,8 @@ class Game {
         var board, eventLoop;
         var score = 0;
         var minBubblePopGrowthFactor = 0.2;
-        var defaultBubbleGrowthFactor = 0.1;
+        var defaultBubbleGrowthFactor = 0.4;
+        var bubbleGrowthFactorMax = 1;
 
         var bubblesMax = board_rows * board_rows;
         var bubblesCount = 0;
@@ -66,7 +67,7 @@ class Game {
             for (let i=0; i<board_rows; i++) {
                 for (let j=0; j<board_rows; j++) {
                     if (board[i][j].items[0]) {
-                        board[i][j].items[0].Grow(1, 1-(bubblesCount/bubblesMax));
+                        board[i][j].items[0].Grow(bubbleGrowthFactorMax, bubbleGrowthFactorMax-(bubblesCount/bubblesMax));
                         new_score += (board[i][j].items[0].growthFactor*10)
                     }
                 }
@@ -92,67 +93,57 @@ class Game {
                 return;
             }
 
-            //poppedAlready[row+','+col] = true;
+            console.log('You popped a bubble at ' + row + ' ' + col);
 
-            let energySpawlLostFactor = 0.2;
+            let energySpawlLostFactor = 0.9;
             let energyLost = b.growthFactor*0.7;
-            b.growthFactor -= energyLost;
-
-            // Up
-            if (row-1 >= 0) {
-                b = board[row-1][col].GetItem();
-                if (!b) {
-                    AddBubble(row-1, col, bubbleColor, defaultBubbleGrowthFactor);
-                } else {
-                    b.growthFactor += energyLost*energySpawlLostFactor;
-                }
-            }
-
-            // Right
-            if (col+1 < (board_rows)) {
-                b = board[row][col+1].GetItem();
-                if (!b) {
-                    AddBubble(row, col+1, bubbleColor, defaultBubbleGrowthFactor);
-                } else {
-                    b.growthFactor += energyLost*energySpawlLostFactor;
-                }
-            }
-
-            // Down
-            if (row+1 < (board_rows)) {
-                b = board[row+1][col].GetItem();
-                if (!b) {
-                    AddBubble(row+1, col, bubbleColor, defaultBubbleGrowthFactor);
-                } else {
-                    b.growthFactor += energyLost*energySpawlLostFactor;
-                }
-            }
+            let newBubbleEnergy =  energyLost*energySpawlLostFactor;
             
+            // Up
+            CreateBubble(row-1, col, newBubbleEnergy);
+            // Right
+            CreateBubble(row, col+1, newBubbleEnergy);
+            // Down
+            CreateBubble(row+1, col, newBubbleEnergy);
+            // Left
+            CreateBubble(row, col-1, newBubbleEnergy);
+
+            if (b.growthFactor >= bubbleGrowthFactorMax) {
+                newBubbleEnergy = newBubbleEnergy * 1.1;
+                // Top Right
+                CreateBubble(row+1, col+1, newBubbleEnergy);
+                // Top Left
+                CreateBubble(row+1, col-1, newBubbleEnergy);
+                // Bottom Right
+                CreateBubble(row-1, col+1, newBubbleEnergy);
+                // Bottom Left
+                CreateBubble(row-1, col-1, newBubbleEnergy);
+            }
+
+            b.growthFactor -= energyLost;
+        }
+
         function CreateBubble(row, col, energy) {
-            if (row > board_rows) { return; }
+            if (row >= board_rows) { return; }
             if (row < 0) { return; }
-            if (col > board_rows) { return; }
+            if (col >= board_rows) { return; }
             if (col < 0) { return; }
 
             let b = board[row][col].GetItem();
             if (!b) {
-                AddBubble(row, col, bubbleColor, defaultBubbleGrowthFactor);
+                AddBubble(row, col, bubbleColor, energy);
             } else {
-                b.growthFactor += energy;
+                b.growthFactor += energy*(1/6);
+                if (b.growthFactor > bubbleGrowthFactorMax) {
+                    b.growthFactor = bubbleGrowthFactorMax;
+                }
             }
-        }
-
-            console.log('You popped a bubble at ' + row + ' ' + col);
-        }
-
-        function CheckCell(row, col) {
-            
         }
 
         function AddStartingBubble() {
             let center = Math.floor(board_rows*0.5);
   
-            AddBubble(center, center, bubbleColor, defaultBubbleGrowthFactor * 2)
+            AddBubble(center, center, bubbleColor, defaultBubbleGrowthFactor)
         }
 
         function AddBubble(x, y, color, growthFactor) {
