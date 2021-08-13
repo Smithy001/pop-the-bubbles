@@ -97,7 +97,7 @@ class App {
 
             game.Render(context, WIDTH, HEIGHT);
             let score = document.getElementById('score');
-            score.textContent = 'Score: ' + game.GetScore();
+            score.textContent = 'Time: ' + game.GetScore();
         }
         
         function HandleMouseDown(e) {

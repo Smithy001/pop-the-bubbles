@@ -11,6 +11,8 @@ class Game {
         var bubblesMax = board_rows * board_rows;
         var bubblesCount = 0;
 
+        var startTime = Date.now();
+
         this.top = top;
         this.left = left;
         this.cell_width = cell_width;
@@ -18,7 +20,7 @@ class Game {
         var poppedAlready = {};
 
         this.GetScore = function () {
-            return score;
+            return (Date.now() - startTime)/1000;
         };
 
         this.Start = function () {
