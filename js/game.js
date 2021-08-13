@@ -130,12 +130,15 @@ class Game {
                 return;
             }
 
+            
             console.log('You popped a bubble at ' + row + ' ' + col);
 
             let energySpawlLostFactor = 0.9;
             let energyLost = b.growthFactor*0.7;
             let newBubbleEnergy =  energyLost*energySpawlLostFactor;
             
+            CreateBubbleAnimation(row, col, energyLost);
+
             // Up
             CreateBubble(row-1, col, newBubbleEnergy);
             // Right
@@ -160,6 +163,10 @@ class Game {
             b.growthFactor -= energyLost;
         }
 
+        function CreateBubbleAnimation(row, col, energy) {
+            board[row][col].AddItem(new BubblePopAnimation(energy, bubbleColor));
+        }
+
         function CreateBubble(row, col, energy) {
             if (row >= board_rows) { return; }
             if (row < 0) { return; }
@@ -175,6 +182,7 @@ class Game {
                     b.growthFactor = bubbleGrowthFactorMax;
                 }
             }
+            CreateBubbleAnimation(row, col, energy);
         }
 
         function AddStartingBubble() {
@@ -249,5 +257,79 @@ class Bubble {
                 this.growthFactor = maxSize;
             }
         }
+    }
+}
+
+
+class BubblePopAnimation {
+    constructor(dissolveSize, color) {
+        var dropletCount = 6;
+        var children = [];
+
+        while( children.length < dropletCount ) {
+            //children.push( { x:0, y:0, size: Math.random()*dissolveSize, velocity: { x: (Math.random()*20)-10, y: -(Math.random()*10) } } );
+            children.push(new Droplet(0, 0, Math.random()*(dissolveSize*0.5), color));
+        }
+
+        this.Render = function (x, y, size, context) {
+            for (let i=0; i<children.length; i++) {
+                children[i].Render(x, y, size, context);
+            }
+        };
+    }
+}
+
+// { x:0, y:0, size: Math.random()*b.dissolveSize, velocity: { x: (Math.random()*20)-10, y: -(Math.random()*10) } } 
+class Droplet {
+    constructor(x, y, size, color) {
+        this.color = color;
+        this.x = x;
+        this.y = y;
+        this.size = size;
+        this.velocity = new Vector((Math.random()*20)-10, -(Math.random()*10));
+
+        //this.velocity = new Vector((Math.random()*2*size)-10, -(Math.random()*10));
+
+        this.Render = function (x, y, size, context) {
+            this.x += this.velocity.x;
+            this.y += this.velocity.y;
+            this.velocity.x /= 1.1;
+            this.velocity.y += 0.4;
+            this.size /= 1.1;
+
+            context.fillStyle = this.color;
+            context.beginPath();
+            context.moveTo(x+this.x, y+this.y);
+            context.arc(x+this.x, y+this.y, this.size*size, 0, Math.PI * 2, true);
+            context.fill();
+
+
+/*
+            this.x += this.velocity.x;
+            this.y += this.velocity.y;
+            this.velocity.x /= 1.1;
+            this.velocity.y += 0.4;
+            this.size /= 1.1;
+            
+            context.fillStyle = '#000000';
+            context.beginPath();
+
+            context.moveTo(x, y);
+            context.arc(x, y, this.size, 0, Math.PI * 2, true);
+
+            //context.moveTo(x+this.x, y+this.y);
+            //context.arc(x+this.x, y+this.y, this.size, 0, Math.PI * 2, true);
+            context.fill();
+            //context.moveTo(this.x+c.x,b.y+c.y); // needed in ff
+            //context.arc(b.x+c.x,b.y+c.y,c.size,0,Math.PI*2,true);
+            */
+        };
+    }
+}
+
+class Vector {
+    constructor (x, y) {
+        this.x = x;
+        this.y = y;
     }
 }
