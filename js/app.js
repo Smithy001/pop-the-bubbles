@@ -2,7 +2,7 @@ class App {
     constructor(canvasId) {    
         var WIDTH = window.innerWidth;
         var HEIGHT = window.innerHeight;
-        var GAME_ROWS = 9;
+        var GAME_ROWS = 3;
         var GAME_CELL_WIDTH, GAME_SIZE, GAME_X, GAME_Y;
         var GAME_MARGIN = 75;
         var BORDER_WIDTH = 5;
@@ -26,6 +26,26 @@ class App {
             SetupGame();
     
             animationLoopTimeInterval = setInterval(AnimationLoop, 50);
+            
+            QueueCountdown();
+        }
+
+        function QueueCountdown() {
+            let message = document.getElementById('message');
+            message.textContent = '3';
+
+            setTimeout(function() { 
+                message.textContent = '2';
+            }, 1000);
+
+            setTimeout(function() { 
+                message.textContent = '1';
+            }, 2000);
+
+            setTimeout(function() { 
+                message.textContent = '';
+                game.Start();
+            }, 3000);
         }
         
         function SetupCanvas() {
@@ -98,6 +118,17 @@ class App {
             game.Render(context, WIDTH, HEIGHT);
             let score = document.getElementById('score');
             score.textContent = 'Time: ' + game.GetScore();
+
+            if (game.GameOver()) {
+                clearInterval(animationLoopTimeInterval);
+                
+                //let message = document.getElementById('message');
+                //message.textContent = 'You won in ' + game.GetScore() + ' seconds!';
+                context.fillStyle = '#000000';
+                context.font = "3em Arial";
+                context.textAlign = "center";
+                context.fillText('You won in ' + game.GetScore() + ' seconds!', WIDTH*0.5, HEIGHT*0.5);
+            }
         }
         
         function HandleMouseDown(e) {
@@ -212,8 +243,6 @@ class App {
         }
 
         Main();
-
-        game.Start();
     }
 }
 

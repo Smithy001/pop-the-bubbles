@@ -3,7 +3,6 @@ console.log("Game class being imported.");
 class Game {
     constructor(left, top, board_rows, cell_width, bubbleColor) {
         var board, eventLoop;
-        var score = 0;
         var minBubblePopGrowthFactor = 0.2;
         var defaultBubbleGrowthFactor = 0.4;
         var bubbleGrowthFactorMax = 1;
@@ -11,7 +10,10 @@ class Game {
         var bubblesMax = board_rows * board_rows;
         var bubblesCount = 0;
 
-        var startTime = Date.now();
+        var startTime = null;
+        var endTime = null;
+        var gameStarted = false;
+        var gameOver = false;
 
         this.top = top;
         this.left = left;
@@ -20,16 +22,36 @@ class Game {
         var poppedAlready = {};
 
         this.GetScore = function () {
+            if (!startTime) {
+                return 0;
+            }
+            if (endTime) {
+                return (endTime - startTime)/1000;
+            }
             return (Date.now() - startTime)/1000;
         };
 
         this.Start = function () {
             console.log("Game starting.");
 
+            gameStarted = true;
+            startTime = Date.now();
             eventLoop = setInterval(EventLoop, 100);
+
+            AddStartingBubble();
         };
 
+        this.End = function () {
+            EndGame();
+        }
+
+        this.GameOver = function () {
+            return gameOver;
+        }
+
         this.Render = function (context) {
+            //if (!gameStarted) { return; }
+            //if (gameOver) { return; }
 
             for (let i=0; i<board_rows; i++) {
                 for (let j=0; j<board_rows; j++) {
@@ -41,6 +63,8 @@ class Game {
         };
 
         this.HandleMouseDown = function(x, y) {
+            if (!gameStarted) { return; }
+            
             let relx = x - this.left;
             let rely = y - this.top;
 
@@ -61,20 +85,34 @@ class Game {
         }
 
         this.HandleMouseUp = function() {
+            if (!gameStarted) { return; }
+            
             poppedAlready = {};
         }
 
+        function EndGame() {
+            console.log("Game ending.");
+            clearInterval(eventLoop);
+            gameOver = true;
+            gameStarted = false;
+        }
+
         function EventLoop() {
-            let new_score = 0;
+            let victory = true;
             for (let i=0; i<board_rows; i++) {
                 for (let j=0; j<board_rows; j++) {
                     if (board[i][j].items[0]) {
                         board[i][j].items[0].Grow(bubbleGrowthFactorMax, bubbleGrowthFactorMax-(bubblesCount/bubblesMax));
-                        new_score += (board[i][j].items[0].growthFactor*10)
+                    } else {
+                        victory = false;
                     }
                 }
             }
-            score = Math.floor(new_score);
+            if (victory == true) {
+                endTime = Date.now();
+                console.log("You won.");
+                EndGame();
+            }
         }
 
         function CreateBoard() {
@@ -156,7 +194,6 @@ class Game {
         function Setup() {
             console.log("Game object being constructed.");
             CreateBoard();
-            AddStartingBubble();
         }
         Setup();
     
