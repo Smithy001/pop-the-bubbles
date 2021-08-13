@@ -2,7 +2,7 @@ class App {
     constructor(canvasId) {    
         var WIDTH = window.innerWidth;
         var HEIGHT = window.innerHeight;
-        var GAME_ROWS = 3;
+        var GAME_ROWS = 9;
         var GAME_CELL_WIDTH, GAME_SIZE, GAME_X, GAME_Y;
         var GAME_MARGIN = 75;
         var BORDER_WIDTH = 5;
