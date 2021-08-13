@@ -50,9 +50,6 @@ class Game {
         }
 
         this.Render = function (context) {
-            //if (!gameStarted) { return; }
-            //if (gameOver) { return; }
-
             for (let i=0; i<board_rows; i++) {
                 for (let j=0; j<board_rows; j++) {
                     let x = this.left + (j * this.cell_width) + (this.cell_width*0.5);
