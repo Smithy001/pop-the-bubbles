@@ -26,12 +26,18 @@ class App {
             SetupGame();
     
             animationLoopTimeInterval = setInterval(AnimationLoop, 50);
-            
-            QueueCountdown();
+        }
+
+        function StartGame() {
+            let message = document.getElementById('message');
+            QueueCountdown(message);
+
+            message.removeEventListener('mousedown', StartGame);
+
         }
 
         function QueueCountdown() {
-            let message = document.getElementById('message');
+            
             message.textContent = '3';
 
             setTimeout(function() { 
@@ -44,11 +50,15 @@ class App {
 
             setTimeout(function() { 
                 message.textContent = '';
+                message.remove();
                 game.Start();
             }, 3000);
         }
         
         function SetupCanvas() {
+            let message = document.getElementById('message');
+            message.addEventListener('mousedown', StartGame);
+
             canvas = document.getElementById(canvasId);
 
             if (canvas && canvas.getContext) {
@@ -169,6 +179,7 @@ class App {
             }
         }
         
+            
         function HandleTouchEnd(e) {
             e.preventDefault();
             console.log("touchend");
