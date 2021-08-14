@@ -8,8 +8,9 @@ class App {
         var GAME_CELL_WIDTH, GAME_SIZE, GAME_X, GAME_Y;
         var GAME_MARGIN = 75;
         var BORDER_WIDTH = 5;
-        var BACKGROUND_COLOR = '#cbeeff';
-        var BACKGROUND_COLOR_SECONDARY = '#afe4ff';
+        var BACKGROUND_COLOR = '#4b6a79' // '#cbeeff';
+        var BACKGROUND_COLOR_SECONDARY = '#1b3744' // '#afe4ff';
+        var TEXT_COLOR = '#fff';
         var MARGIN_COLOR = '#fff';
         var BORDER_COLOR = '#6c6c6c';
         var BUBBLE_COLOR = '#00c8ff';
@@ -43,10 +44,14 @@ class App {
         function EndGame() {
             clearInterval(animationLoopTimeInterval);
                 
-            context.fillStyle = '#000000';
+            context.fillStyle = TEXT_COLOR;
             context.font = "3em Arial";
             context.textAlign = "center";
-            context.fillText('You won in ' + game.GetScore() + ' seconds!', WIDTH*0.5, HEIGHT*0.5);
+            context.fillText('You won in ' + game.GetScore() + ' seconds!', WIDTH*0.5, HEIGHT*0.5)
+
+            context.strokeStyle = BACKGROUND_COLOR_SECONDARY;
+            context.lineWidth = 1; 
+            context.strokeText('You won in ' + game.GetScore() + ' seconds!', WIDTH*0.5, HEIGHT*0.5);
 
             document.getElementById('next_level_button').style.display = "block";
         }

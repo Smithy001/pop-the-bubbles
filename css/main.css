@@ -46,6 +46,7 @@ body {
   align-items: center;
   font-size: 4em;
   z-index: 100;
+  color: #fff;
 }
 
 .button {
