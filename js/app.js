@@ -6,10 +6,11 @@ class App {
         var GAME_CELL_WIDTH, GAME_SIZE, GAME_X, GAME_Y;
         var GAME_MARGIN = 75;
         var BORDER_WIDTH = 5;
-        var BACKGROUND_COLOR = '#f8fbff';
+        var BACKGROUND_COLOR = '#cbeeff';
+        var BACKGROUND_COLOR_SECONDARY = '#afe4ff';
         var MARGIN_COLOR = '#fff';
         var BORDER_COLOR = '#6c6c6c';
-        var BUBBLE_COLOR = '#379af7';
+        var BUBBLE_COLOR = '#00c8ff';
 
         var animationLoopTimeInterval;
         var game;
@@ -118,12 +119,19 @@ class App {
                 GAME_SIZE+BORDER_WIDTH*2, 
                 GAME_SIZE+BORDER_WIDTH*2);
 
-            context.fillStyle = BACKGROUND_COLOR;
+
+            var gradientFill = context.createLinearGradient(GAME_X,GAME_Y,GAME_SIZE,GAME_SIZE);
+			gradientFill.addColorStop(0,BACKGROUND_COLOR);
+            gradientFill.addColorStop(1,BACKGROUND_COLOR_SECONDARY);
+
+            context.fillStyle = gradientFill;
+            
             context.fillRect(
                 GAME_X, 
                 GAME_Y, 
                 GAME_SIZE, 
                 GAME_SIZE);
+
 
             game.Render(context, WIDTH, HEIGHT);
             let score = document.getElementById('score');
@@ -132,8 +140,6 @@ class App {
             if (game.GameOver()) {
                 clearInterval(animationLoopTimeInterval);
                 
-                //let message = document.getElementById('message');
-                //message.textContent = 'You won in ' + game.GetScore() + ' seconds!';
                 context.fillStyle = '#000000';
                 context.font = "3em Arial";
                 context.textAlign = "center";

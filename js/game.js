@@ -205,6 +205,7 @@ class Game {
     }
 }
 
+
 class Cell {
     constructor(row, col) {
         this.items = [];
@@ -233,28 +234,43 @@ class Cell {
     }
 }
 
+
 class Bubble {
     constructor(color, growthFactor) {
         this.color = color;
         this.growthRateMin = 0.01;
         this.growthRateMax = 0.5;
         this.growthFactor = growthFactor;
+        this.growthFactorMax = growthFactor+1;
 
         this.Render = function (x, y, size, context) {
-            context.fillStyle = this.color;
+            let arcSize = size*0.5*this.growthFactor;
+
             context.beginPath();
-            context.moveTo(x, y);
-            context.arc(x, y, size*0.5*this.growthFactor, 0, Math.PI * 2, true);
+            context.arc(x, y, arcSize, 0, Math.PI * 2, true);
+            context.fillStyle = this.color;
             context.fill();
+
+            if (this.growthFactor < this.growthFactorMax) {
+                context.beginPath();
+                arcSize = arcSize-(arcSize*0.33*(this.growthFactor/this.growthFactorMax));
+
+                context.arc(x, y, arcSize, 0, Math.PI * 2, true);
+                context.fillStyle = '#FFFFFF';
+                context.fill();
+            }
         };
 
+
         this.Grow = function (maxSize, dimFactor) {
-            if (this.growthFactor < maxSize) {
+            this.growthFactorMax = maxSize;
+
+            if (this.growthFactor < this.growthFactorMax) {
                 this.growthFactor += (this.growthRateMin * this.growthFactor * dimFactor);
             }
 
-            if (this.growthFactor > maxSize) {
-                this.growthFactor = maxSize;
+            if (this.growthFactor > this.growthFactorMax) {
+                this.growthFactor = this.growthFactorMax;
             }
         }
     }
@@ -279,16 +295,14 @@ class BubblePopAnimation {
     }
 }
 
-// { x:0, y:0, size: Math.random()*b.dissolveSize, velocity: { x: (Math.random()*20)-10, y: -(Math.random()*10) } } 
+
 class Droplet {
     constructor(x, y, size, color) {
         this.color = color;
         this.x = x;
         this.y = y;
         this.size = size;
-        this.velocity = new Vector((Math.random()*20)-10, -(Math.random()*10));
-
-        //this.velocity = new Vector((Math.random()*2*size)-10, -(Math.random()*10));
+        this.velocity = new Vector((Math.random()*size*70)-(size*50), -(Math.random()*size*50));
 
         this.Render = function (x, y, size, context) {
             this.x += this.velocity.x;
@@ -302,30 +316,10 @@ class Droplet {
             context.moveTo(x+this.x, y+this.y);
             context.arc(x+this.x, y+this.y, this.size*size, 0, Math.PI * 2, true);
             context.fill();
-
-
-/*
-            this.x += this.velocity.x;
-            this.y += this.velocity.y;
-            this.velocity.x /= 1.1;
-            this.velocity.y += 0.4;
-            this.size /= 1.1;
-            
-            context.fillStyle = '#000000';
-            context.beginPath();
-
-            context.moveTo(x, y);
-            context.arc(x, y, this.size, 0, Math.PI * 2, true);
-
-            //context.moveTo(x+this.x, y+this.y);
-            //context.arc(x+this.x, y+this.y, this.size, 0, Math.PI * 2, true);
-            context.fill();
-            //context.moveTo(this.x+c.x,b.y+c.y); // needed in ff
-            //context.arc(b.x+c.x,b.y+c.y,c.size,0,Math.PI*2,true);
-            */
         };
     }
 }
+
 
 class Vector {
     constructor (x, y) {
