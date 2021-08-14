@@ -8,6 +8,8 @@ class Game {
         var defaultBubbleGrowthFactor = 0.4;
         var bubbleGrowthFactorMax = 1;
 
+        var RESOURCE_NODE_COLOR = '#48ee48';
+
         var bubblesMax = board_rows * board_rows;
         var bubblesCount = 0;
 
@@ -42,6 +44,8 @@ class Game {
             eventLoop = setInterval(EventLoop, EVENT_LOOP_MS);
 
             AddStartingBubble();
+
+            AddStartingResourceNodes();
         };
 
         this.End = function () {
@@ -108,8 +112,16 @@ class Game {
             let victory = true;
             for (let i=0; i<board_rows; i++) {
                 for (let j=0; j<board_rows; j++) {
-                    if (board[i][j].items[0]) {
-                        board[i][j].items[0].Grow(bubbleGrowthFactorMax, bubbleGrowthFactorMax-(bubblesCount/bubblesMax));
+                    let bubbleItem = board[i][j].items[0];
+                    if (bubbleItem) {
+                        if (bubbleItem.Grow) {
+                            let resourceItem = board[i][j].items[1];
+                            let growthRate = bubbleGrowthFactorMax-(bubblesCount/bubblesMax);
+                            if (resourceItem && resourceItem.Resource) {
+                                growthRate = bubbleGrowthFactorMax * 20;
+                            }
+                            bubbleItem.Grow(bubbleGrowthFactorMax, growthRate);
+                        }
                     } else {
                         victory = false;
                     }
@@ -135,6 +147,10 @@ class Game {
 
         function PopBubble(row, col) {
             let b = board[row][col].GetItem();
+
+            if (!b.Pop) {
+                return;
+            }
 
             if (b.growthFactor < minBubblePopGrowthFactor) {
                 return;
@@ -183,7 +199,7 @@ class Game {
             if (col < 0) { return; }
 
             let b = board[row][col].GetItem();
-            if (!b) {
+            if (!b || !b.Pop) {
                 AddBubble(row, col, bubbleColor, energy);
             } else {
                 b.growthFactor += energy*(1/6);
@@ -200,10 +216,39 @@ class Game {
             AddBubble(center, center, bubbleColor, defaultBubbleGrowthFactor)
         }
 
+        function AddStartingResourceNodes() {
+            if (board_rows > 5) {
+                AddResourceNode(board_rows-Math.floor(board_rows*0.5), board_rows-Math.floor(board_rows*0.5), RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5)
+            }
+            
+            if (board_rows >= 9) {
+                AddResourceNode(2, 2, RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5)
+            }
+
+            if (board_rows >= 13) {
+                AddResourceNode(Math.floor(board_rows*0.8), Math.floor(board_rows*0.5), RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
+            }
+
+            if (board_rows >= 15) {
+                AddResourceNode(Math.floor(board_rows*0.3), Math.floor(board_rows*0.5), RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
+            }
+
+            if (board_rows >= 19) {
+                AddResourceNode(Math.floor(board_rows*0.5) - 1, board_rows-Math.floor(board_rows*0.3)-3, RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
+                AddResourceNode(Math.floor(board_rows*0.5) - 2, board_rows-Math.floor(board_rows*0.3)-2, RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
+            }
+        }
+
         function AddBubble(x, y, color, growthFactor) {
-            board[x][y].AddItem(new Bubble(color, growthFactor));
+            board[x][y].AddItem(new Bubble(color, growthFactor), true);
             bubblesCount += 1;
         }
+
+        
+        function AddResourceNode(x, y, color, size) {
+            board[x][y].AddItem(new ResourceNode(color, size));
+        }
+
 
         function Setup() {
             console.log("Game object being constructed.");
@@ -222,11 +267,16 @@ class Cell {
         this.col = col;
 
         this.Render = function (x, y, size, context, data) {
-            for (let i=0; i<this.items.length; i++) {
+            for (let i=1; i<this.items.length; i++) {
                 this.items[i].Render(x, y, size, context, data);
                 if (this.items[i].animationFinished) {
                     this.items.splice(i, 1);
                 }
+            }
+
+            if (this.items.length > 0) {
+                // Render the top item last
+                this.items[0].Render(x, y, size, context, data);
             }
         };
 
@@ -234,8 +284,12 @@ class Cell {
             return this.items[0];
         }
 
-        this.AddItem = function(item) {
-            this.items.push(item);
+        this.AddItem = function(item, first) {
+            if (first) {
+                this.items.unshift(item);
+            } else {
+                this.items.push(item);
+            }
         };
 
         this.HandleMouseDown = function(x, y, callback) {
@@ -291,7 +345,9 @@ class Bubble {
             if (this.growthFactor > this.growthFactorMax) {
                 this.growthFactor = this.growthFactorMax;
             }
-        }
+        };
+
+        this.Pop = function () { return true; };
     }
 }
 
@@ -359,5 +415,24 @@ class Vector {
     constructor (x, y) {
         this.x = x;
         this.y = y;
+    }
+}
+
+
+class ResourceNode {
+    constructor(color, size) {
+        this.color = color;
+        this.size = size;
+
+        this.Render = function (x, y, size, context, data) {
+            let arcSize = this.size*size*0.5;
+
+            context.beginPath();
+            context.arc(x, y, arcSize, 0, Math.PI * 2, true);
+            context.fillStyle = this.color;
+            context.fill();
+        };
+
+        this.Resource = function() { return true; };
     }
 }
