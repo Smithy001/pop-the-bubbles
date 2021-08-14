@@ -2,6 +2,7 @@ console.log("Game class being imported.");
 
 class Game {
     constructor(left, top, board_rows, cell_width, bubbleColor) {
+        var EVENT_LOOP_MS = 100;
         var board, eventLoop;
         var minBubblePopGrowthFactor = 0.2;
         var defaultBubbleGrowthFactor = 0.4;
@@ -11,6 +12,7 @@ class Game {
         var bubblesCount = 0;
 
         var startTime = null;
+        var currentTime = null;
         var endTime = null;
         var gameStarted = false;
         var gameOver = false;
@@ -26,9 +28,9 @@ class Game {
                 return 0;
             }
             if (endTime) {
-                return (endTime - startTime)/1000;
+                return ((endTime - startTime)/1000).toFixed(2);
             }
-            return (Date.now() - startTime)/1000;
+            return ((currentTime - startTime)/1000).toFixed(2);
         };
 
         this.Start = function () {
@@ -36,7 +38,8 @@ class Game {
 
             gameStarted = true;
             startTime = Date.now();
-            eventLoop = setInterval(EventLoop, 100);
+            currentTime = startTime;
+            eventLoop = setInterval(EventLoop, EVENT_LOOP_MS);
 
             AddStartingBubble();
         };
@@ -95,6 +98,8 @@ class Game {
         }
 
         function EventLoop() {
+            currentTime += EVENT_LOOP_MS;
+
             let victory = true;
             for (let i=0; i<board_rows; i++) {
                 for (let j=0; j<board_rows; j++) {
