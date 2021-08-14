@@ -3,6 +3,8 @@ console.log("Game class being imported.");
 class Game {
     constructor(left, top, board_rows, cell_width, bubbleColor) {
         var EVENT_LOOP_MS = 100;
+        var MAX_CASCADE = 100;
+        
         var board, eventLoop;
         var minBubblePopGrowthFactor = 0.2;
         var defaultBubbleGrowthFactor = 0.4;
@@ -12,6 +14,9 @@ class Game {
 
         var bubblesMax = board_rows * board_rows;
         var bubblesCount = 0;
+
+        var MAX_ITEMS = 5000;
+        var MAX_ITEMS_PER_CELL = Math.floor(MAX_ITEMS/bubblesMax);
 
         var startTime = null;
         var currentTime = null;
@@ -139,13 +144,28 @@ class Game {
             for (let i=0; i<board_rows; i++) {
                 let row = [];
                 for (let j=0; j<board_rows; j++) {
-                    row.push(new Cell(i, j));
+                    row.push(new Cell(i, j, MAX_ITEMS_PER_CELL));
                 }
                 board.push(row);
             }
         }
 
-        function PopBubble(row, col) {
+        function PopBubble(row, col, depth) {
+
+            if (!depth) {
+                depth = 1
+            }
+
+            if (depth > MAX_CASCADE) {
+                return;
+            }
+
+            if (poppedAlready.hasOwnProperty(row+','+col) == true) {
+                return;
+            } else {
+                poppedAlready[row+','+col] = true;
+            }
+
             let b = board[row][col].GetItem();
 
             if (!b.Pop) {
@@ -165,24 +185,24 @@ class Game {
             CreateBubbleAnimation(row, col, energyLost);
 
             // Up
-            CreateBubble(row-1, col, newBubbleEnergy);
+            CreateBubble(row-1, col, newBubbleEnergy, depth);
             // Right
-            CreateBubble(row, col+1, newBubbleEnergy);
+            CreateBubble(row, col+1, newBubbleEnergy, depth);
             // Down
-            CreateBubble(row+1, col, newBubbleEnergy);
+            CreateBubble(row+1, col, newBubbleEnergy, depth);
             // Left
-            CreateBubble(row, col-1, newBubbleEnergy);
+            CreateBubble(row, col-1, newBubbleEnergy, depth);
 
             if (b.growthFactor >= bubbleGrowthFactorMax) {
                 newBubbleEnergy = newBubbleEnergy * 1.1;
                 // Top Right
-                CreateBubble(row+1, col+1, newBubbleEnergy);
+                CreateBubble(row+1, col+1, newBubbleEnergy, depth);
                 // Top Left
-                CreateBubble(row+1, col-1, newBubbleEnergy);
+                CreateBubble(row+1, col-1, newBubbleEnergy, depth);
                 // Bottom Right
-                CreateBubble(row-1, col+1, newBubbleEnergy);
+                CreateBubble(row-1, col+1, newBubbleEnergy, depth);
                 // Bottom Left
-                CreateBubble(row-1, col-1, newBubbleEnergy);
+                CreateBubble(row-1, col-1, newBubbleEnergy, depth);
             }
 
             b.growthFactor -= energyLost;
@@ -192,7 +212,8 @@ class Game {
             board[row][col].AddItem(new BubblePopAnimation(energy, bubbleColor));
         }
 
-        function CreateBubble(row, col, energy) {
+        function CreateBubble(row, col, energy, depth) {
+            if (!depth) {depth=1;}
             if (row >= board_rows) { return; }
             if (row < 0) { return; }
             if (col >= board_rows) { return; }
@@ -202,8 +223,12 @@ class Game {
             if (!b || !b.Pop) {
                 AddBubble(row, col, bubbleColor, energy);
             } else {
+                if (b.growthFactor >= bubbleGrowthFactorMax) {
+                    PopBubble(row, col, depth+1);
+                }
+
                 b.growthFactor += energy*(1/6);
-                if (b.growthFactor > bubbleGrowthFactorMax) {
+                if (b.growthFactor >= bubbleGrowthFactorMax) {
                     b.growthFactor = bubbleGrowthFactorMax;
                 }
             }
@@ -261,13 +286,14 @@ class Game {
 
 
 class Cell {
-    constructor(row, col) {
+    constructor(row, col, maxItemsPerCell) {
         this.items = [];
         this.row = row;
         this.col = col;
+        this.maxItemsPerCell = maxItemsPerCell;
 
         this.Render = function (x, y, size, context, data) {
-            for (let i=1; i<this.items.length; i++) {
+            for (let i=0; i<this.items.length; i++) {
                 this.items[i].Render(x, y, size, context, data);
                 if (this.items[i].animationFinished) {
                     this.items.splice(i, 1);
@@ -276,7 +302,7 @@ class Cell {
 
             if (this.items.length > 0) {
                 // Render the top item last
-                this.items[0].Render(x, y, size, context, data);
+                //this.items[0].Render(x, y, size, context, data);
             }
         };
 
@@ -285,6 +311,9 @@ class Cell {
         }
 
         this.AddItem = function(item, first) {
+            if (this.items.length >= this.maxItemsPerCell) {
+                return;
+            }
             if (first) {
                 this.items.unshift(item);
             } else {
