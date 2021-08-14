@@ -57,7 +57,12 @@ class Game {
                 for (let j=0; j<board_rows; j++) {
                     let x = this.left + (j * this.cell_width) + (this.cell_width*0.5);
                     let y = this.top + (i * this.cell_width) + (this.cell_width*0.5);
-                    board[i][j].Render(x, y, this.cell_width, context);
+
+                    let smallCell = false;
+                    if (board[i][j].items[0] && board[i][j].items[0].growthFactor < minBubblePopGrowthFactor) {
+                        smallCell = true;
+                    }
+                    board[i][j].Render(x, y, this.cell_width, context, {'smallCell': smallCell});
                 }
             }
         };
@@ -134,7 +139,6 @@ class Game {
             if (b.growthFactor < minBubblePopGrowthFactor) {
                 return;
             }
-
             
             console.log('You popped a bubble at ' + row + ' ' + col);
 
@@ -217,9 +221,12 @@ class Cell {
         this.row = row;
         this.col = col;
 
-        this.Render = function (x, y, size, context) {
+        this.Render = function (x, y, size, context, data) {
             for (let i=0; i<this.items.length; i++) {
-                this.items[i].Render(x, y, size, context);
+                this.items[i].Render(x, y, size, context, data);
+                if (this.items[i].animationFinished) {
+                    this.items.splice(i, 1);
+                }
             }
         };
 
@@ -248,20 +255,27 @@ class Bubble {
         this.growthFactor = growthFactor;
         this.growthFactorMax = growthFactor+1;
 
-        this.Render = function (x, y, size, context) {
+        this.Render = function (x, y, size, context, data) {
             let arcSize = size*0.5*this.growthFactor;
+
+            let fillColor = '#FFFFFF';
+            let edgeColor = color;
+            if (data.smallCell) {
+                fillColor = '#C9C9C9';
+                edgeColor = '#437289';
+            }
 
             context.beginPath();
             context.arc(x, y, arcSize, 0, Math.PI * 2, true);
-            context.fillStyle = this.color;
+            context.fillStyle = edgeColor;
             context.fill();
 
             if (this.growthFactor < this.growthFactorMax) {
                 context.beginPath();
-                arcSize = arcSize-(arcSize*0.33*(this.growthFactor/this.growthFactorMax));
+                arcSize = arcSize-((arcSize*0.25)+(arcSize*0.10*(this.growthFactor/this.growthFactorMax)));
 
                 context.arc(x, y, arcSize, 0, Math.PI * 2, true);
-                context.fillStyle = '#FFFFFF';
+                context.fillStyle = fillColor;
                 context.fill();
             }
         };
@@ -285,17 +299,32 @@ class Bubble {
 class BubblePopAnimation {
     constructor(dissolveSize, color) {
         var dropletCount = 6;
-        var children = [];
+        var droplets = [];
+        var minDropletSize = 0.005;
 
-        while( children.length < dropletCount ) {
-            //children.push( { x:0, y:0, size: Math.random()*dissolveSize, velocity: { x: (Math.random()*20)-10, y: -(Math.random()*10) } } );
-            children.push(new Droplet(0, 0, Math.random()*(dissolveSize*0.5), color));
+        this.animationFinished = false;
+
+        while( droplets.length < dropletCount ) {
+            droplets.push(new Droplet(0, 0, Math.random()*(dissolveSize*0.5), color));
         }
 
-        this.Render = function (x, y, size, context) {
-            for (let i=0; i<children.length; i++) {
-                children[i].Render(x, y, size, context);
+        this.Render = function (x, y, size, context, data) {
+            let disappearedDroplets = 0;
+            for (let i=0; i<droplets.length; i++) {
+                if (droplets[i].size > minDropletSize) {
+                    droplets[i].Render(x, y, size, context, data);
+                } else {
+                    disappearedDroplets += 1;
+                }
             }
+            if (disappearedDroplets == droplets.length) {
+                this.animationFinished = true;
+                this.Cleanup();
+            }
+        };
+
+        this.Cleanup = function () {
+            while (droplets.pop()) {}
         };
     }
 }
@@ -309,7 +338,7 @@ class Droplet {
         this.size = size;
         this.velocity = new Vector((Math.random()*size*70)-(size*50), -(Math.random()*size*50));
 
-        this.Render = function (x, y, size, context) {
+        this.Render = function (x, y, size, context, data) {
             this.x += this.velocity.x;
             this.y += this.velocity.y;
             this.velocity.x /= 1.1;
