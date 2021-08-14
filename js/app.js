@@ -1,8 +1,10 @@
 class App {
-    constructor(canvasId) {    
+    constructor(canvasId) {
+        var level = 1;
+
         var WIDTH = window.innerWidth;
         var HEIGHT = window.innerHeight;
-        var GAME_ROWS = 9;
+        var GAME_ROWS = (level * 2) + 1;
         var GAME_CELL_WIDTH, GAME_SIZE, GAME_X, GAME_Y;
         var GAME_MARGIN = 75;
         var BORDER_WIDTH = 5;
@@ -31,13 +33,25 @@ class App {
 
         function StartGame() {
             let message = document.getElementById('message');
+            message.style.display = "flex";
             QueueCountdown(message);
 
             message.removeEventListener('mousedown', StartGame);
 
         }
 
-        function QueueCountdown() {
+        function EndGame() {
+            clearInterval(animationLoopTimeInterval);
+                
+            context.fillStyle = '#000000';
+            context.font = "3em Arial";
+            context.textAlign = "center";
+            context.fillText('You won in ' + game.GetScore() + ' seconds!', WIDTH*0.5, HEIGHT*0.5);
+
+            document.getElementById('next_level_button').style.display = "block";
+        }
+
+        function QueueCountdown(message) {
             
             message.textContent = '3';
 
@@ -51,7 +65,7 @@ class App {
 
             setTimeout(function() { 
                 message.textContent = '';
-                message.remove();
+                message.style.display = 'none';
                 game.Start();
             }, 3000);
         }
@@ -59,6 +73,9 @@ class App {
         function SetupCanvas() {
             let message = document.getElementById('message');
             message.addEventListener('mousedown', StartGame);
+
+            let nextLevelButton = document.getElementById('next_level_button');
+            nextLevelButton.addEventListener('mousedown', HandleNextLevelMouseDown);
 
             canvas = document.getElementById(canvasId);
 
@@ -137,16 +154,23 @@ class App {
             let score = document.getElementById('score');
             score.textContent = 'Time: ' + game.GetScore();
 
+            document.getElementById('level').textContent = 'Level: ' + level;
+
             if (game.GameOver()) {
-                clearInterval(animationLoopTimeInterval);
-                
-                context.fillStyle = '#000000';
-                context.font = "3em Arial";
-                context.textAlign = "center";
-                context.fillText('You won in ' + game.GetScore() + ' seconds!', WIDTH*0.5, HEIGHT*0.5);
+                EndGame();
             }
         }
         
+        function HandleNextLevelMouseDown(e) {
+            document.getElementById('next_level_button').style.display = "none";
+            level += 1;
+            GAME_ROWS = (level * 2) + 1;
+            Main();
+
+            StartGame();
+
+        }
+
         function HandleMouseDown(e) {
             if (mouseDown) {
                 console.log('You can only click one at a time');

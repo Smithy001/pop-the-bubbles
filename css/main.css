@@ -25,6 +25,16 @@ body {
   user-select: none;
 }
 
+#level {
+  position: fixed;
+  top: 0;
+  right: 0;
+  padding: 1em;
+  font-size: 2em;
+  pointer-events: none;
+  user-select: none;
+}
+
 #message {
   position: fixed;
   top: 0;
@@ -36,4 +46,19 @@ body {
   align-items: center;
   font-size: 4em;
   z-index: 100;
+}
+
+.button {
+  display: none;
+  position: relative;
+  top: 60%;
+  width: 50%;
+  padding: 1em;
+  margin: auto;
+  text-decoration: none;
+  text-transform: uppercase;
+  text-align: center;
+  border: 1px solid black;
+  font-size: 2em;
+  background-color: white;
 }
