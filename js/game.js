@@ -3,7 +3,7 @@ console.log("Game class being imported.");
 class Game {
     constructor(left, top, board_rows, cell_width, bubbleColor) {
         var EVENT_LOOP_MS = 100;
-        var MAX_CASCADE = 100;
+        var MAX_CASCADE = 1;
         
         var board, eventLoop;
         var minBubblePopGrowthFactor = 0.2;
@@ -11,9 +11,11 @@ class Game {
         var bubbleGrowthFactorMax = 1;
 
         var RESOURCE_NODE_COLOR = '#48ee48';
+        var VIRUS_BUBBLE_COLOR = '#ff0000';
 
         var bubblesMax = board_rows * board_rows;
         var bubblesCount = 0;
+        var virusCount = 0;
 
         var MAX_ITEMS = 5000;
         var MAX_ITEMS_PER_CELL = Math.floor(MAX_ITEMS/bubblesMax);
@@ -51,6 +53,8 @@ class Game {
             AddStartingBubble();
 
             AddStartingResourceNodes();
+
+            AddBubble(board_rows-1, board_rows-1, VIRUS_BUBBLE_COLOR, 0.8, true);
         };
 
         this.End = function () {
@@ -117,18 +121,33 @@ class Game {
             let victory = true;
             for (let i=0; i<board_rows; i++) {
                 for (let j=0; j<board_rows; j++) {
-                    let bubbleItem = board[i][j].items[0];
-                    if (bubbleItem) {
-                        if (bubbleItem.Grow) {
+                    let item = board[i][j].items[0];
+                    if (item) {
+                        if (item.Grow) {
                             let resourceItem = board[i][j].items[1];
                             let growthRate = bubbleGrowthFactorMax-(bubblesCount/bubblesMax);
+
+                            if (item.virus) {
+                                growthRate = bubbleGrowthFactorMax-(virusCount/bubblesMax);
+                            }
+
                             if (resourceItem && resourceItem.Resource) {
                                 growthRate = bubbleGrowthFactorMax * 20;
+
+                                if (item.growthFactor < bubbleGrowthFactorMax || item.virus) {
+                                    victory = false;
+                                }
                             }
-                            bubbleItem.Grow(bubbleGrowthFactorMax, growthRate);
+                            item.Grow(bubbleGrowthFactorMax, growthRate);
+
+                            if (item.virus) {
+                                if (item.growthFactor >= bubbleGrowthFactorMax) {
+                                    PopBubble(i, j, 1, true);
+                                }
+                            }
+                        } else if (item.Resource) {
+                            victory = false;
                         }
-                    } else {
-                        victory = false;
                     }
                 }
             }
@@ -150,15 +169,9 @@ class Game {
             }
         }
 
-        function PopBubble(row, col, depth) {
-
-            if (!depth) {
-                depth = 1
-            }
-
-            if (depth > MAX_CASCADE) {
-                return;
-            }
+        function PopBubble(row, col, depth, isVirus) {
+            if (!depth) { depth = 1; }
+            if (depth > MAX_CASCADE) { return; }
 
             if (poppedAlready.hasOwnProperty(row+','+col) == true) {
                 return;
@@ -168,9 +181,9 @@ class Game {
 
             let b = board[row][col].GetItem();
 
-            if (!b.Pop) {
-                return;
-            }
+            if (!b.Pop) { return; }
+            
+            if (b.virus && !isVirus) { return; }
 
             if (b.growthFactor < minBubblePopGrowthFactor) {
                 return;
@@ -181,38 +194,43 @@ class Game {
             let energySpawlLostFactor = 0.9;
             let energyLost = b.growthFactor*0.7;
             let newBubbleEnergy =  energyLost*energySpawlLostFactor;
-            
-            CreateBubbleAnimation(row, col, energyLost);
+            let color = bubbleColor;
+
+            if (isVirus) {
+                color = VIRUS_BUBBLE_COLOR;
+            } else {
+                CreateBubbleAnimation(row, col, energyLost, color);
+            }
 
             // Up
-            CreateBubble(row-1, col, newBubbleEnergy, depth);
+            CreateBubble(row-1, col, newBubbleEnergy, depth, isVirus, color);
             // Right
-            CreateBubble(row, col+1, newBubbleEnergy, depth);
+            CreateBubble(row, col+1, newBubbleEnergy, depth, isVirus, color);
             // Down
-            CreateBubble(row+1, col, newBubbleEnergy, depth);
+            CreateBubble(row+1, col, newBubbleEnergy, depth, isVirus, color);
             // Left
-            CreateBubble(row, col-1, newBubbleEnergy, depth);
+            CreateBubble(row, col-1, newBubbleEnergy, depth, isVirus, color);
 
             if (b.growthFactor >= bubbleGrowthFactorMax) {
                 newBubbleEnergy = newBubbleEnergy * 1.1;
                 // Top Right
-                CreateBubble(row+1, col+1, newBubbleEnergy, depth);
+                CreateBubble(row+1, col+1, newBubbleEnergy, depth, isVirus, color);
                 // Top Left
-                CreateBubble(row+1, col-1, newBubbleEnergy, depth);
+                CreateBubble(row+1, col-1, newBubbleEnergy, depth, isVirus, color);
                 // Bottom Right
-                CreateBubble(row-1, col+1, newBubbleEnergy, depth);
+                CreateBubble(row-1, col+1, newBubbleEnergy, depth, isVirus, color);
                 // Bottom Left
-                CreateBubble(row-1, col-1, newBubbleEnergy, depth);
+                CreateBubble(row-1, col-1, newBubbleEnergy, depth, isVirus, color);
             }
 
             b.growthFactor -= energyLost;
         }
 
-        function CreateBubbleAnimation(row, col, energy) {
-            board[row][col].AddItem(new BubblePopAnimation(energy, bubbleColor));
+        function CreateBubbleAnimation(row, col, energy, color) {
+            board[row][col].AddItem(new BubblePopAnimation(energy, color));
         }
 
-        function CreateBubble(row, col, energy, depth) {
+        function CreateBubble(row, col, energy, depth, virus, color) {
             if (!depth) {depth=1;}
             if (row >= board_rows) { return; }
             if (row < 0) { return; }
@@ -221,10 +239,10 @@ class Game {
 
             let b = board[row][col].GetItem();
             if (!b || !b.Pop) {
-                AddBubble(row, col, bubbleColor, energy);
+                AddBubble(row, col, color, energy, virus);
             } else {
                 if (b.growthFactor >= bubbleGrowthFactorMax) {
-                    PopBubble(row, col, depth+1);
+                    //PopBubble(row, col, depth+1, virus);
                 }
 
                 b.growthFactor += energy*(1/6);
@@ -232,7 +250,7 @@ class Game {
                     b.growthFactor = bubbleGrowthFactorMax;
                 }
             }
-            CreateBubbleAnimation(row, col, energy);
+            CreateBubbleAnimation(row, col, energy, color);
         }
 
         function AddStartingBubble() {
@@ -242,6 +260,18 @@ class Game {
         }
 
         function AddStartingResourceNodes() {
+            // Level 1
+            if (board_rows == 3) {
+                AddResourceNode(2, 2, RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
+                AddResourceNode(2, 0, RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
+                AddResourceNode(0, 0, RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
+                AddResourceNode(0, 2, RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
+            }
+
+            if (board_rows == 5) {
+                AddResourceNode(0, 0, RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
+            }
+
             if (board_rows > 5) {
                 AddResourceNode(board_rows-Math.floor(board_rows*0.5), board_rows-Math.floor(board_rows*0.5), RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5)
             }
@@ -264,11 +294,15 @@ class Game {
             }
         }
 
-        function AddBubble(x, y, color, growthFactor) {
-            board[x][y].AddItem(new Bubble(color, growthFactor), true);
-            bubblesCount += 1;
-        }
+        function AddBubble(x, y, color, growthFactor, virus) {
+            board[x][y].AddItem(new Bubble(color, growthFactor, virus), true);
 
+            if (!virus) {
+                bubblesCount += 1;
+            } else {
+                virusCount += 1;
+            }
+        }
         
         function AddResourceNode(x, y, color, size) {
             board[x][y].AddItem(new ResourceNode(color, size));
@@ -331,12 +365,13 @@ class Cell {
 
 
 class Bubble {
-    constructor(color, growthFactor) {
+    constructor(color, growthFactor, virus) {
         this.color = color;
         this.growthRateMin = 0.01;
         this.growthRateMax = 0.5;
         this.growthFactor = growthFactor;
         this.growthFactorMax = growthFactor+1;
+        this.virus = virus;
 
         this.Render = function (x, y, size, context, data) {
             let arcSize = size*0.5*this.growthFactor;
@@ -383,7 +418,7 @@ class Bubble {
 
 class BubblePopAnimation {
     constructor(dissolveSize, color) {
-        var dropletCount = 6;
+        var dropletCount = 3;
         var droplets = [];
         var minDropletSize = 0.005;
 
