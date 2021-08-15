@@ -5,7 +5,10 @@ class Game {
         var EVENT_LOOP_MS = 100;
         var MAX_CASCADE = 1;
         
+        var virusChoicePower;
+        var virusCells;
         var board, eventLoop;
+        var aiLoop;
         var minBubblePopGrowthFactor = 0.2;
         var defaultBubbleGrowthFactor = 0.4;
         var bubbleGrowthFactorMax = 1;
@@ -49,6 +52,9 @@ class Game {
             startTime = Date.now();
             currentTime = startTime;
             eventLoop = setInterval(EventLoop, EVENT_LOOP_MS);
+            aiLoop = setInterval(AiLoop, EVENT_LOOP_MS);
+
+            virusChoicePower = 0;
 
             AddStartingBubble();
 
@@ -113,8 +119,161 @@ class Game {
         function EndGame() {
             console.log("Game ending.");
             clearInterval(eventLoop);
+            clearInterval(aiLoop);
             gameOver = true;
             gameStarted = false;
+        }
+
+        function AiLoop() {
+            if (virusCells.length > 0) {
+                let virusChoicePowerGain = Math.floor((Math.random() * 10) + 1);
+                let timeFactor = EVENT_LOOP_MS / 100;
+                virusChoicePowerGain += 25 //(board_rows - 16) / 3;
+                virusChoicePowerGain *= timeFactor;
+
+                virusChoicePower += virusChoicePowerGain;
+
+                if (virusChoicePower >= 200)
+                {
+                    virusChoicePower = 0;
+                    VirusPopBubble();
+                }
+            }
+        }
+
+        function VirusPopBubble() {
+            let virusToPop;
+            let highestPopValue = 2;
+
+            console.log("Virus choosing a bubble to pop");
+
+            for (let index = 0; index < virusCells.length; index++) {
+                let thisVirus = virusCells[index];
+
+                if (thisVirus.growthFactor > minBubblePopGrowthFactor) {
+                    let northX = thisVirus.x + 1;
+                    let southX = thisVirus.x - 1;
+                    let eastX = thisVirus.x;
+                    let westX = thisVirus.x;
+                    
+                    let northY = thisVirus.y;
+                    let southY = thisVirus.y;
+                    let eastY = thisVirus.y + 1;
+                    let westY = thisVirus.y - 1;
+
+                    //console.log("north " + northX + "," + northY);
+                    //console.log("south " + southX + "," + southY);
+                    //console.log("east " + eastX + "," + eastY);
+                    //console.log("west " + westX + "," + westY);
+
+                    let popValue = 0;
+                    let northValue = GetVirusPopValueBasedOnNeighbor(northX, northY, thisVirus.x, thisVirus.y);
+                    let southValue = GetVirusPopValueBasedOnNeighbor(southX, southY, thisVirus.x, thisVirus.y);
+                    let eastValue = GetVirusPopValueBasedOnNeighbor(eastX, eastY, thisVirus.x, thisVirus.y);
+                    let westValue = GetVirusPopValueBasedOnNeighbor(westX, westY, thisVirus.x, thisVirus.y);
+
+                    let neighborCount = 0;
+                    if (northValue > 0) { neighborCount += 1; }
+                    if (southValue > 0) { neighborCount += 1; }
+                    if (eastValue > 0) { neighborCount += 1; }
+                    if (westValue > 0) { neighborCount += 1; }
+
+                    popValue += (northValue + southValue + eastValue + westValue) / neighborCount;
+
+                    //popValue += Math.floor((Math.random() * 3));
+                    popValue *= thisVirus.growthFactor * 2;
+
+                    if (thisVirus.growthFactor == thisVirus.growthFactorMax) { 
+                        popValue *= 2;
+                    }
+
+                    if (popValue > highestPopValue) {
+                        virusToPop = thisVirus;
+                        console.log("Virus picking " + thisVirus.x + "," + thisVirus.y + " at value " + popValue + ". Prior value " + highestPopValue);
+                        highestPopValue = popValue;
+                    }
+                }
+            }
+
+            if (virusToPop) {
+                console.log("Virus popping " + virusToPop.x + "," + virusToPop.y);
+                PopBubble(virusToPop.x, virusToPop.y, 1, true);
+            }
+            else {
+                console.log("Virus is not popping a bubble at this time, highest value " + highestPopValue);
+            }
+        }
+
+        function GetVirusPopValueBasedOnNeighbor(x, y, sourceX, sourceY) {
+            // console.log("Virus is checking " + x + "," + y + " for growth");
+            let row = board[x];
+            let value = 0;
+
+            if (row) {
+                let cell = board[x][y];
+
+                if (cell) {
+                    let item = cell.items[0];
+                    
+                    if (item) {
+                        if (item.virus) {
+                            value = 0.1;
+                        }
+                        else if (item.Resource) {
+                            value = 50;
+                        }
+                        else {
+                            let resourceItem = cell.items[1];
+                            let valueFactor = 20;
+
+                            if (resourceItem && resourceItem.Resource) {
+                                valueFactor += 40;
+                            }
+                            
+                            // There's a player there, CAN grow
+                            value = item.growthFactorMax - item.growthFactor;
+                            value *= valueFactor;
+                        }
+                    }
+                    else {
+                        // There's nothing there, can grow
+                        value =  1;
+                    }
+                }
+                else {
+                    // This column doesn't exist
+                    value =  0;
+                }
+            }
+            else {
+                // This row doesn't exist
+                value = 0;
+            }
+
+            if (value > 0) {
+                let centerX = board_rows / 2;
+                let centerY = board_rows / 2;
+                let currentDifference = GetDistanceBetweenTwoPoints(centerX, centerY, sourceX, sourceY);
+                let newDifference = GetDistanceBetweenTwoPoints(centerX, centerY, x, y);
+                let diffValue = currentDifference - newDifference;
+    
+                diffValue *= 3;
+    
+                if (diffValue > 0)
+                {
+                    value += diffValue;
+                }
+            }
+
+            return value;
+        }
+
+        function GetDistanceBetweenTwoPoints(targetX, targetY, startX, startY) {
+            let xDiff = Math.abs(targetX - startX) * 2;
+            let yDiff = Math.abs(targetY - startY) * 2;
+            let difference = Math.sqrt(xDiff + yDiff);
+
+            return difference;
         }
 
         function EventLoop() {
@@ -134,19 +293,13 @@ class Game {
                             }
 
                             if (resourceItem && resourceItem.Resource) {
-                                growthRate = bubbleGrowthFactorMax * 20;
+                                growthRate = bubbleGrowthFactorMax * 10;
 
                                 if (item.growthFactor < bubbleGrowthFactorMax || item.virus) {
                                     victory = false;
                                 }
                             }
                             item.Grow(bubbleGrowthFactorMax, growthRate);
-
-                            if (item.virus) {
-                                if (item.growthFactor >= bubbleGrowthFactorMax) {
-                                    PopBubble(i, j, 1, true);
-                                }
-                            }
                         } else if (item.Resource) {
                             victory = false;
                         }
@@ -161,7 +314,9 @@ class Game {
         }
 
         function CreateBoard() {
-            board = []
+            board = [];
+            virusCells = [];
+
             for (let i=0; i<board_rows; i++) {
                 let row = [];
                 for (let j=0; j<board_rows; j++) {
@@ -176,7 +331,7 @@ class Game {
             if (depth > MAX_CASCADE) { return; }
 
             if (poppedAlready.hasOwnProperty(row+','+col) == true) {
-                return;
+            //    return;
             } else {
                 poppedAlready[row+','+col] = true;
             }
@@ -191,7 +346,9 @@ class Game {
                 return;
             }
             
-            console.log('You popped a bubble at ' + row + ' ' + col);
+            if (!isVirus) {
+                console.log('You popped a bubble at ' + row + ' ' + col);
+            }
 
             let energySpawlLostFactor = 0.9;
             let energyLost = b.growthFactor*0.7;
@@ -241,15 +398,37 @@ class Game {
 
             let b = board[row][col].GetItem();
             if (!b || !b.Pop) {
+                energy *= 0.9;
                 AddBubble(row, col, color, energy, virus);
             } else {
-                if (b.growthFactor >= bubbleGrowthFactorMax) {
-                    //PopBubble(row, col, depth+1, virus);
-                }
+                //There's already a bubble, but is it on the same side as the one that just popped?
+                
+                if (virus != b.virus) {
+                    if (b.growthFactor < minBubblePopGrowthFactor) {
+                        b.growthFactor = 0;
+                    }
+                    else {
+                        b.growthFactor -= energy * 1.2;
+                    }
 
-                b.growthFactor += energy*(1/6);
-                if (b.growthFactor >= bubbleGrowthFactorMax) {
-                    b.growthFactor = bubbleGrowthFactorMax;
+                    if (b.growthFactor <= 0) {
+                        //Remove this bubble
+                        board[row][col].items.splice(0);
+                        if (b.isVirus) {
+                            let virusIndex = virusCells.indexOf(b);
+                            virusCells.splice(virusIndex);
+                        }
+                    }
+                }
+                else {
+                    if (b.growthFactor >= bubbleGrowthFactorMax) {
+                        //PopBubble(row, col, depth+1, virus);
+                    }
+    
+                    b.growthFactor += energy*(1/5);
+                    if (b.growthFactor >= bubbleGrowthFactorMax) {
+                        b.growthFactor = bubbleGrowthFactorMax;
+                    }
                 }
             }
             CreateBubbleAnimation(row, col, energy, color);
@@ -297,7 +476,14 @@ class Game {
         }
 
         function AddBubble(x, y, color, growthFactor, virus) {
-            board[x][y].AddItem(new Bubble(color, growthFactor, virus), true);
+            let bubble = new Bubble(color, growthFactor, virus, x, y);
+
+            if (virus) {
+                console.log("Added bubble at " + x + "," + y);
+                virusCells.push(bubble);
+            }
+
+            board[x][y].AddItem(bubble, true);
 
             if (!virus) {
                 bubblesCount += 1;
@@ -367,13 +553,15 @@ class Cell {
 
 
 class Bubble {
-    constructor(color, growthFactor, virus) {
+    constructor(color, growthFactor, virus, x, y) {
         this.color = color;
         this.growthRateMin = 0.01;
         this.growthRateMax = 0.5;
         this.growthFactor = growthFactor;
         this.growthFactorMax = growthFactor+1;
         this.virus = virus;
+        this.x = x;
+        this.y = y;
 
         this.Render = function (x, y, size, context, data) {
             let arcSize = size*0.5*this.growthFactor;
