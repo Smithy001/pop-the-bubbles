@@ -279,6 +279,9 @@ class Game {
         function EventLoop() {
             currentTime += EVENT_LOOP_MS;
 
+            let newBubbleCount = 0;
+            let newVirusCount = 0;
+
             let victory = true;
             for (let i=0; i<board_rows; i++) {
                 for (let j=0; j<board_rows; j++) {
@@ -290,6 +293,9 @@ class Game {
 
                             if (item.virus) {
                                 growthRate = bubbleGrowthFactorMax-(virusCount/bubblesMax);
+                                newVirusCount += 1;
+                            } else {
+                                newBubbleCount += 1;
                             }
 
                             if (resourceItem && resourceItem.Resource) {
@@ -306,6 +312,10 @@ class Game {
                     }
                 }
             }
+
+            bubblesCount = newBubbleCount;
+            virusCount = newVirusCount;
+
             if (victory == true) {
                 endTime = Date.now();
                 console.log("You won.");
