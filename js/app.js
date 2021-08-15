@@ -1,6 +1,6 @@
 class App {
     constructor(canvasId) {
-        var level = 7;
+        var level = 1;
 
         var WIDTH = window.innerWidth;
         var HEIGHT = window.innerHeight;

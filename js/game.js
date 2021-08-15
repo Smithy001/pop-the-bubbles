@@ -54,7 +54,9 @@ class Game {
 
             AddStartingResourceNodes();
 
-            AddBubble(board_rows-1, board_rows-1, VIRUS_BUBBLE_COLOR, 0.8, true);
+            if (board_rows > 14) {
+                AddBubble(board_rows-1, board_rows-1, VIRUS_BUBBLE_COLOR, 0.8, true);
+            }
         };
 
         this.End = function () {
