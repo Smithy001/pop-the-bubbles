@@ -1,6 +1,6 @@
 class App {
     constructor(canvasId) {
-        var level = 7;
+        var level = getStartingLevel();
 
         var WIDTH = window.innerWidth;
         var HEIGHT = window.innerHeight;
@@ -286,6 +286,23 @@ class App {
 
         function copyTouch({ identifier, pageX, pageY }) {
             return { identifier, pageX, pageY };
+        }
+
+        function getURLHash(defaultValue) {
+            let hash = location.hash.substr(1);
+
+            if (hash == "") {
+                return defaultValue;
+            }
+            return hash;
+        }
+
+        function getStartingLevel() {
+            let level = parseInt(getURLHash(1));
+            if (isNaN(level)) {
+                return 1;
+            }
+            return level;
         }
 
         Main();
