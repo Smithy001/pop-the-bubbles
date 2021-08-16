@@ -305,7 +305,7 @@ class Game {
                                     PopBubble(i, j, 1, false);
                                 }
 
-                                if (item.growthFactor < bubbleGrowthFactorMax || item.virus) {
+                                if ((item.growthFactor < bubbleGrowthFactorMax && !resourceItem.MaxLevel())|| item.virus) {
                                     victory = false;
                                 }
                             }
