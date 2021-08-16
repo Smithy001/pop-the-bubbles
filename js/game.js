@@ -15,12 +15,13 @@ class Game {
 
         var RESOURCE_NODE_COLOR = '#48ee48';
         var VIRUS_BUBBLE_COLOR = '#ff0000';
+        var PROJECTILE_COLOR = '#a837ff';
 
         var bubblesMax = board_rows * board_rows;
         var bubblesCount = 0;
         var virusCount = 0;
 
-        var MAX_ITEMS = 5000;
+        var MAX_ITEMS = 1000;
         var MAX_ITEMS_PER_CELL = Math.floor(MAX_ITEMS/bubblesMax);
 
         var startTime = null;
@@ -67,10 +68,22 @@ class Game {
             let endY = this.top + (endRow * this.cell_width) + (this.cell_width*0.5);
 
 
-            AddResourceNode(endRow, endCol, RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
+            //AddResourceNode(endRow, endCol, RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
+
+            AddBubble(endRow, endCol, VIRUS_BUBBLE_COLOR, 0.8, true);
             
 
-            board[0][0].AddItem(new Projectile('#a837ff', defaultBubbleGrowthFactor, new Vector(1, 1), endX, endY, 1, 10));
+            board[0][0].AddItem(new Projectile(PROJECTILE_COLOR, defaultBubbleGrowthFactor, new Vector(1, 1), endX, endY, endCol, endRow, 1, 10, HandleExplosion));
+/*
+
+
+            endRow = board_rows*0.5;
+            endCol = board_rows*0.5;
+            endX = this.left + (endCol * this.cell_width) + (this.cell_width*0.5);
+            endY = this.top + (endRow * this.cell_width) + (this.cell_width*0.5);
+*/
+            let center = Math.floor(board_rows*0.5);
+            board[center][center].AddItem(new Projectile(PROJECTILE_COLOR, defaultBubbleGrowthFactor, new Vector(1, 1), endX, endY, endCol, endRow, 1, 10, HandleExplosion));
 
             if (board_rows > 14) {
                 AddBubble(board_rows-1, board_rows-1, VIRUS_BUBBLE_COLOR, 0.8, true);
@@ -297,33 +310,35 @@ class Game {
             let victory = true;
             for (let i=0; i<board_rows; i++) {
                 for (let j=0; j<board_rows; j++) {
-                    let item = board[i][j].items[0];
-                    if (item) {
-                        if (item.Grow) {
-                            let resourceItem = board[i][j].items[1];
-                            let growthRate = bubbleGrowthFactorMax-(bubblesCount/bubblesMax);
+                    for (let h=0; h<board_rows; h++) {
+                        let item = board[i][j].items[h];
+                        if (item) {
+                            if (item.Grow) {
+                                let resourceItem = board[i][j].items[1];
+                                let growthRate = bubbleGrowthFactorMax-(bubblesCount/bubblesMax);
 
-                            if (item.virus) {
-                                growthRate = bubbleGrowthFactorMax-(virusCount/bubblesMax);
-                                newVirusCount += 1;
-                            } else {
-                                newBubbleCount += 1;
-                            }
-
-                            if (resourceItem && resourceItem.Resource) {
-                                growthRate = (bubbleGrowthFactorMax * 10)*resourceItem.PercentToMax();
-
-                                if (resourceItem.MaxLevel() && item.growthFactor >= bubbleGrowthFactorMax) {
-                                    PopBubble(i, j, 1, false);
+                                if (item.virus) {
+                                    growthRate = bubbleGrowthFactorMax-(virusCount/bubblesMax);
+                                    newVirusCount += 1;
+                                } else {
+                                    newBubbleCount += 1;
                                 }
 
-                                if ((item.growthFactor < bubbleGrowthFactorMax && !resourceItem.MaxLevel())|| item.virus) {
-                                    victory = false;
+                                if (resourceItem && resourceItem.Resource) {
+                                    growthRate = (bubbleGrowthFactorMax * 10)*resourceItem.PercentToMax();
+
+                                    if (resourceItem.MaxLevel() && item.growthFactor >= bubbleGrowthFactorMax) {
+                                        PopBubble(i, j, 1, false);
+                                    }
+
+                                    if ((item.growthFactor < bubbleGrowthFactorMax && !resourceItem.MaxLevel())|| item.virus) {
+                                        victory = false;
+                                    }
                                 }
+                                item.Grow(bubbleGrowthFactorMax, growthRate);                            
+                            } else if (item.Resource) {
+                                victory = false;
                             }
-                            item.Grow(bubbleGrowthFactorMax, growthRate);                            
-                        } else if (item.Resource) {
-                            victory = false;
                         }
                     }
                 }
@@ -352,6 +367,52 @@ class Game {
             }
         }
 
+        function HandleExplosion(row, col) {
+            DamageCell(row, col, false);
+
+            let b = board[row][col].GetItem();
+            let destroyCell = false;
+            if (b && b.growthFactor < (minBubblePopGrowthFactor)) {
+                destroyCell = true;
+            }
+
+            DamageCell(row-1, col-1, true);
+            DamageCell(row-1, col, true);
+            DamageCell(row-1, col+1, true);
+            DamageCell(row, col-1, true);
+            
+            DamageCell(row, col+1, true);
+            DamageCell(row+1, col-1, true);
+            DamageCell(row+1, col, true);
+            DamageCell(row+1, col+1, true);
+
+            // Destory the impact cell at the end
+            if (destroyCell) {
+                RemoveBubble(row, col);
+            }
+            
+        }
+
+        function DamageCell(row, col, destory) {
+            CreateBubbleAnimation(row, col, 0.25, '#000000');
+            CreateBubbleAnimation(row, col, 0.5, PROJECTILE_COLOR);
+
+            let b = board[row][col].GetItem();
+
+            if (!b || !b.Pop) { return; }
+
+            b.growthFactor -= (b.growthFactor * 0.5);
+
+            if (destory && b && b.growthFactor < (minBubblePopGrowthFactor)) {
+                RemoveBubble(row, col);
+                return;
+            }
+
+            let isVirus = b.virus;
+
+            PopBubble(row, col, 1, isVirus);
+        }
+
         function PopBubble(row, col, depth, isVirus) {
             if (!depth) { depth = 1; }
             if (depth > MAX_CASCADE) { return; }
@@ -362,67 +423,70 @@ class Game {
                 //poppedAlready[row+','+col] = true;
             }
 
-            let b = board[row][col].GetItem();
+            for (let i=0; i<board[row][col].items.length; i++) {
+                //let b = board[row][col].GetItem();
+                let b = board[row][col].items[i];
 
-            if (b.launched == false) {
-                let changeX = b.destinationX-b.x;
-                let changeY = b.destinationY-b.y;
-
-                let slope = changeY/changeX;
-                b.Launch(slope);
-            }
-
-            if (!b.Pop) { return; }
-            
-            if (b.virus && !isVirus) { return; }
-
-            if (b.growthFactor < minBubblePopGrowthFactor) {
-                return;
-            }
-            
-            if (!isVirus) {
-                console.log('You popped a bubble at ' + row + ' ' + col);
-            }
-
-            let energySpawlLostFactor = 0.9;
-            let energyLost = b.growthFactor*0.7;
-            let newBubbleEnergy =  energyLost*energySpawlLostFactor;
-            let color = bubbleColor;
-
-            if (isVirus) {
-                color = VIRUS_BUBBLE_COLOR;
-            } else {
-                CreateBubbleAnimation(row, col, energyLost, color);
-            }
-
-            // Up
-            CreateBubble(row-1, col, newBubbleEnergy, depth, isVirus, color);
-            // Right
-            CreateBubble(row, col+1, newBubbleEnergy, depth, isVirus, color);
-            // Down
-            CreateBubble(row+1, col, newBubbleEnergy, depth, isVirus, color);
-            // Left
-            CreateBubble(row, col-1, newBubbleEnergy, depth, isVirus, color);
-
-            if (b.growthFactor >= bubbleGrowthFactorMax) {
-                let r = board[row][col].items[1];
-
-                if (r && r.Resource && r.LevelUp) {
-                    r.LevelUp();
+                if (b.launched == false) {
+                    let changeX = b.destinationX-b.x;
+                    let changeY = b.destinationY-b.y;
+    
+                    let slope = changeY/changeX;
+                    b.Launch(slope);
                 }
-
-                newBubbleEnergy = newBubbleEnergy * 1.1;
-                // Top Right
-                CreateBubble(row+1, col+1, newBubbleEnergy, depth, isVirus, color);
-                // Top Left
-                CreateBubble(row+1, col-1, newBubbleEnergy, depth, isVirus, color);
-                // Bottom Right
-                CreateBubble(row-1, col+1, newBubbleEnergy, depth, isVirus, color);
-                // Bottom Left
-                CreateBubble(row-1, col-1, newBubbleEnergy, depth, isVirus, color);
+    
+                if (!b.Pop) { return; }
+                
+                if (b.virus && !isVirus) { return; }
+    
+                if (b.growthFactor < minBubblePopGrowthFactor) {
+                    return;
+                }
+                
+                if (!isVirus) {
+                    console.log('You popped a bubble at ' + row + ' ' + col);
+                }
+    
+                let energySpawlLostFactor = 0.9;
+                let energyLost = b.growthFactor*0.7;
+                let newBubbleEnergy =  energyLost*energySpawlLostFactor;
+                let color = bubbleColor;
+    
+                if (isVirus) {
+                    color = VIRUS_BUBBLE_COLOR;
+                } else {
+                    CreateBubbleAnimation(row, col, energyLost, color);
+                }
+    
+                // Up
+                CreateBubble(row-1, col, newBubbleEnergy, depth, isVirus, color);
+                // Right
+                CreateBubble(row, col+1, newBubbleEnergy, depth, isVirus, color);
+                // Down
+                CreateBubble(row+1, col, newBubbleEnergy, depth, isVirus, color);
+                // Left
+                CreateBubble(row, col-1, newBubbleEnergy, depth, isVirus, color);
+    
+                if (b.growthFactor >= bubbleGrowthFactorMax) {
+                    let r = board[row][col].items[1];
+    
+                    if (r && r.Resource && r.LevelUp) {
+                        r.LevelUp();
+                    }
+    
+                    newBubbleEnergy = newBubbleEnergy * 1.1;
+                    // Top Right
+                    CreateBubble(row+1, col+1, newBubbleEnergy, depth, isVirus, color);
+                    // Top Left
+                    CreateBubble(row+1, col-1, newBubbleEnergy, depth, isVirus, color);
+                    // Bottom Right
+                    CreateBubble(row-1, col+1, newBubbleEnergy, depth, isVirus, color);
+                    // Bottom Left
+                    CreateBubble(row-1, col-1, newBubbleEnergy, depth, isVirus, color);
+                }
+    
+                b.growthFactor -= energyLost;
             }
-
-            b.growthFactor -= energyLost;
         }
 
         function CreateBubbleAnimation(row, col, energy, color) {
@@ -452,12 +516,7 @@ class Game {
                     }
 
                     if (b.growthFactor <= 0) {
-                        //Remove this bubble
-                        board[row][col].items.splice(0);
-                        if (b.isVirus) {
-                            let virusIndex = virusCells.indexOf(b);
-                            virusCells.splice(virusIndex);
-                        }
+                        RemoveBubble(row, col);
                     }
                 }
                 else {
@@ -472,6 +531,18 @@ class Game {
                 }
             }
             CreateBubbleAnimation(row, col, energy, color);
+        }
+
+        function RemoveBubble(row, col) {
+            let b = board[row][col].items[0];
+            
+            if (!b || !b.Pop) { return; }
+
+            if (b.isVirus) {
+                let virusIndex = virusCells.indexOf(b);
+                virusCells.splice(virusIndex);
+            }
+            board[row][col].items.splice(0);
         }
 
         function AddStartingBubble() {
@@ -495,7 +566,8 @@ class Game {
             }
 
             if (board_rows > 5) {
-                AddResourceNode(board_rows-Math.floor(board_rows*0.5), board_rows-Math.floor(board_rows*0.5), RESOURCE_NODE_COLOR, resourceNodeSize)
+                AddResourceNode(board_rows-Math.floor(board_rows*0.5), board_rows-Math.floor(board_rows*0.5), RESOURCE_NODE_COLOR, resourceNodeSize);
+                AddResourceNode(0, board_rows-1, RESOURCE_NODE_COLOR, resourceNodeSize);
             }
             
             if (board_rows >= 9) {
@@ -533,8 +605,8 @@ class Game {
             }
         }
         
-        function AddResourceNode(x, y, color, size) {
-            board[x][y].AddItem(new ResourceNode(color, size));
+        function AddResourceNode(row, col, color, size) {
+            board[row][col].AddItem(new ResourceNode(color, size));
         }
 
 
@@ -749,12 +821,14 @@ class ResourceNode {
 }
 
 class Projectile {
-    constructor(color, size, vector, destinationX, destinationY, power, level) {
+    constructor(color, size, vector, destinationX, destinationY, destinationCol, destinationRow, power, level, destinationAction) {
         this.color = color;
         this.size = size;
         this.vector = vector;
         this.destinationX = destinationX;
         this.destinationY = destinationY;
+        this.destinationCol = destinationCol;
+        this.destinationRow = destinationRow;
         this.power = power;
         this.level = level;
         this.traveled = new Vector(0, 0, 0, 0);
@@ -961,7 +1035,7 @@ class Projectile {
                 constructionProgress += 1;
             }
 
-            if (!this.launched) {
+            if (!this.launched || this.arrived) {
                 return;
             }
             let changeX = this.destinationX-this.x;
@@ -969,17 +1043,29 @@ class Projectile {
 
             if (changeX+changeY<0) {
                 this.arrived = true;
+                destinationAction(this.destinationRow, this.destinationCol);
                 return;
             }
+
+
+            /// keep radians, don't convert to degrees
+            //projectiles[pindex]['angle'] = Math.atan2(y - 200, x - 300); // * 180 / Math.PI;
+            let angle = Math.atan2(this.y-this.destinationY, this.x-this.destinationX);
+
+            this.traveled.x -= 10 * Math.cos(angle);
+            this.traveled.y -= 10 * Math.sin(angle);
+
+            return;
 
             let slope = changeY/changeX;
 
             slope = this.slope;
 
+            
+
             this.traveled.velocityX = (this.power + this.level);
             this.traveled.velocityY = this.slope*(this.power + this.level);
 
-            // y − y1 = m(x − x1)
 
 
 
