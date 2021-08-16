@@ -175,6 +175,8 @@ class Game {
             for (let index = 0; index < virusCells.length; index++) {
                 let thisVirus = virusCells[index];
 
+                if (!thisVirus) { continue; }
+
                 if (thisVirus.growthFactor > minBubblePopGrowthFactor) {
                     let northX = thisVirus.x + 1;
                     let southX = thisVirus.x - 1;
@@ -370,6 +372,8 @@ class Game {
         function HandleExplosion(row, col) {
             DamageCell(row, col, false);
 
+            
+
             let b = board[row][col].GetItem();
             let destroyCell = false;
             if (b && b.growthFactor < (minBubblePopGrowthFactor)) {
@@ -394,6 +398,7 @@ class Game {
         }
 
         function DamageCell(row, col, destory) {
+            if (!board[row] || !board[row][col]) { return; }
             CreateBubbleAnimation(row, col, 0.25, '#000000');
             CreateBubbleAnimation(row, col, 0.5, PROJECTILE_COLOR);
 
@@ -428,10 +433,20 @@ class Game {
                 let b = board[row][col].items[i];
 
                 if (b.launched == false) {
+                    
+
+
                     let changeX = b.destinationX-b.x;
                     let changeY = b.destinationY-b.y;
     
                     let slope = changeY/changeX;
+
+                    
+                    b.destinationCol = virusCells[0].y;
+                    b.destinationRow = virusCells[0].x;
+                    b.destinationX = left + (b.destinationCol * cell_width) + (cell_width*0.5);
+                    b.destinationY = top + (b.destinationRow * cell_width) + (cell_width*0.5);
+
                     b.Launch(slope);
                 }
     
@@ -490,7 +505,9 @@ class Game {
         }
 
         function CreateBubbleAnimation(row, col, energy, color) {
-            board[row][col].AddItem(new BubblePopAnimation(energy, color));
+            if (board[row] && board[row][col]) {
+                board[row][col].AddItem(new BubblePopAnimation(energy, color));
+            }
         }
 
         function CreateBubble(row, col, energy, depth, virus, color) {
@@ -538,11 +555,10 @@ class Game {
             
             if (!b || !b.Pop) { return; }
 
-            if (b.isVirus) {
-                let virusIndex = virusCells.indexOf(b);
-                virusCells.splice(virusIndex);
+            if (b.virus) {
+                RemoveVirusCell(row, col);
             }
-            board[row][col].items.splice(0);
+            board[row][col].items.splice(0, 1);
         }
 
         function AddStartingBubble() {
@@ -609,6 +625,26 @@ class Game {
             board[row][col].AddItem(new ResourceNode(color, size));
         }
 
+        function RemoveVirusCell(row, col) {
+            for(let i=0;i<virusCells.length;i++) {
+                if (virusCells[i].x == row && virusCells[i].y == col) {
+                    virusCells.splice(i, 1);
+                    return;
+                }
+            }
+        }
+
+        function FindTarget(row, col) {
+            let proximityThreat = 1;
+            let sizeThreat = 1;
+
+            for(let i=0;i<virusCells.length;i++) {
+                if (virusCells[i].x == row && virusCells[i].y == col) {
+                    virusCells.splice(i, 1);
+                    return;
+                }
+            }
+        }
 
         function Setup() {
             console.log("Game object being constructed.");
@@ -1046,7 +1082,7 @@ class Projectile {
                 destinationAction(this.destinationRow, this.destinationCol);
                 return;
             }
-
+//if (Math.abs(changeX)+Math.abs(changeY)<this.size) {
 
             /// keep radians, don't convert to degrees
             //projectiles[pindex]['angle'] = Math.atan2(y - 200, x - 300); // * 180 / Math.PI;
