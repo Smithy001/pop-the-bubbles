@@ -441,9 +441,10 @@ class Game {
     
                     let slope = changeY/changeX;
 
+                    let target = FindTarget(row, col);
                     
-                    b.destinationCol = virusCells[0].y;
-                    b.destinationRow = virusCells[0].x;
+                    b.destinationCol = virusCells[target].y;
+                    b.destinationRow = virusCells[target].x;
                     b.destinationX = left + (b.destinationCol * cell_width) + (cell_width*0.5);
                     b.destinationY = top + (b.destinationRow * cell_width) + (cell_width*0.5);
 
@@ -635,15 +636,18 @@ class Game {
         }
 
         function FindTarget(row, col) {
-            let proximityThreat = 1;
-            let sizeThreat = 1;
+            let closestTarget = false;
+            let closestTargetIndex = 0;
 
             for(let i=0;i<virusCells.length;i++) {
-                if (virusCells[i].x == row && virusCells[i].y == col) {
-                    virusCells.splice(i, 1);
-                    return;
+                let dist = GetDistanceBetweenTwoPoints(row, col, virusCells[i].x, virusCells[i].y);
+
+                if (!closestTarget || dist < closestTarget) {
+                    closestTarget = dist;
+                    closestTargetIndex = i;
                 }
             }
+            return closestTargetIndex;
         }
 
         function Setup() {
