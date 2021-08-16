@@ -301,11 +301,15 @@ class Game {
                             if (resourceItem && resourceItem.Resource) {
                                 growthRate = bubbleGrowthFactorMax * 10;
 
+                                if (resourceItem.MaxLevel() && item.growthFactor >= bubbleGrowthFactorMax) {
+                                    PopBubble(i, j, 1, false);
+                                }
+
                                 if (item.growthFactor < bubbleGrowthFactorMax || item.virus) {
                                     victory = false;
                                 }
                             }
-                            item.Grow(bubbleGrowthFactorMax, growthRate);
+                            item.Grow(bubbleGrowthFactorMax, growthRate);                            
                         } else if (item.Resource) {
                             victory = false;
                         }
@@ -381,6 +385,12 @@ class Game {
             CreateBubble(row, col-1, newBubbleEnergy, depth, isVirus, color);
 
             if (b.growthFactor >= bubbleGrowthFactorMax) {
+                let r = board[row][col].items[1];
+
+                if (r && r.Resource && r.LevelUp) {
+                    r.LevelUp();
+                }
+
                 newBubbleEnergy = newBubbleEnergy * 1.1;
                 // Top Right
                 CreateBubble(row+1, col+1, newBubbleEnergy, depth, isVirus, color);
@@ -451,37 +461,38 @@ class Game {
         }
 
         function AddStartingResourceNodes() {
+            let resourceNodeSize = defaultBubbleGrowthFactor*0.75;
             // Level 1
             if (board_rows == 3) {
-                AddResourceNode(2, 2, RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
-                AddResourceNode(2, 0, RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
-                AddResourceNode(0, 0, RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
-                AddResourceNode(0, 2, RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
+                AddResourceNode(2, 2, RESOURCE_NODE_COLOR, resourceNodeSize);
+                AddResourceNode(2, 0, RESOURCE_NODE_COLOR, resourceNodeSize);
+                AddResourceNode(0, 0, RESOURCE_NODE_COLOR, resourceNodeSize);
+                AddResourceNode(0, 2, RESOURCE_NODE_COLOR, resourceNodeSize);
             }
 
             if (board_rows == 5) {
-                AddResourceNode(0, 0, RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
+                AddResourceNode(0, 0, RESOURCE_NODE_COLOR, resourceNodeSize);
             }
 
             if (board_rows > 5) {
-                AddResourceNode(board_rows-Math.floor(board_rows*0.5), board_rows-Math.floor(board_rows*0.5), RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5)
+                AddResourceNode(board_rows-Math.floor(board_rows*0.5), board_rows-Math.floor(board_rows*0.5), RESOURCE_NODE_COLOR, resourceNodeSize)
             }
             
             if (board_rows >= 9) {
-                AddResourceNode(2, 2, RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5)
+                AddResourceNode(2, 2, RESOURCE_NODE_COLOR, resourceNodeSize)
             }
 
             if (board_rows >= 13) {
-                AddResourceNode(Math.floor(board_rows*0.8), Math.floor(board_rows*0.5), RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
+                AddResourceNode(Math.floor(board_rows*0.8), Math.floor(board_rows*0.5), RESOURCE_NODE_COLOR, resourceNodeSize);
             }
 
             if (board_rows >= 15) {
-                AddResourceNode(Math.floor(board_rows*0.3), Math.floor(board_rows*0.5), RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
+                AddResourceNode(Math.floor(board_rows*0.3), Math.floor(board_rows*0.5), RESOURCE_NODE_COLOR, resourceNodeSize);
             }
 
             if (board_rows >= 19) {
-                AddResourceNode(Math.floor(board_rows*0.5) - 1, board_rows-Math.floor(board_rows*0.3)-3, RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
-                AddResourceNode(Math.floor(board_rows*0.5) - 2, board_rows-Math.floor(board_rows*0.3)-2, RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
+                AddResourceNode(Math.floor(board_rows*0.5) - 1, board_rows-Math.floor(board_rows*0.3)-3, RESOURCE_NODE_COLOR, resourceNodeSize);
+                AddResourceNode(Math.floor(board_rows*0.5) - 2, board_rows-Math.floor(board_rows*0.3)-2, RESOURCE_NODE_COLOR, resourceNodeSize);
             }
         }
 
@@ -687,9 +698,11 @@ class ResourceNode {
     constructor(color, size) {
         this.color = color;
         this.size = size;
+        this.level = 5;
+        var maxLevel = 10;
 
         this.Render = function (x, y, size, context, data) {
-            let arcSize = this.size*size*0.5;
+            let arcSize = (this.size*(this.level/maxLevel))*size;
 
             context.beginPath();
             context.arc(x, y, arcSize, 0, Math.PI * 2, true);
@@ -698,5 +711,13 @@ class ResourceNode {
         };
 
         this.Resource = function() { return true; };
+
+        this.MaxLevel = function() { return (this.level >= maxLevel); }
+
+        this.LevelUp = function() { 
+            if (this.level < maxLevel) {
+                this.level += 1;
+            }
+        }
     }
 }
