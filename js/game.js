@@ -70,10 +70,7 @@ class Game {
 
             //AddResourceNode(endRow, endCol, RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
 
-            AddBubble(endRow, endCol, VIRUS_BUBBLE_COLOR, 0.8, true);
             
-
-            board[0][0].AddItem(new Projectile(PROJECTILE_COLOR, defaultBubbleGrowthFactor, new Vector(1, 1), endX, endY, endCol, endRow, 1, 10, HandleExplosion));
 /*
 
 
@@ -82,8 +79,15 @@ class Game {
             endX = this.left + (endCol * this.cell_width) + (this.cell_width*0.5);
             endY = this.top + (endRow * this.cell_width) + (this.cell_width*0.5);
 */
+            
+            /*
+            AddBubble(endRow, endCol, VIRUS_BUBBLE_COLOR, 0.8, true);
+            board[0][0].AddItem(new Projectile(PROJECTILE_COLOR, defaultBubbleGrowthFactor, new Vector(1, 1), 1, 10, HandleExplosion));
+
             let center = Math.floor(board_rows*0.5);
-            board[center][center].AddItem(new Projectile(PROJECTILE_COLOR, defaultBubbleGrowthFactor, new Vector(1, 1), endX, endY, endCol, endRow, 1, 10, HandleExplosion));
+            board[center][center].AddItem(new Projectile(PROJECTILE_COLOR, defaultBubbleGrowthFactor, new Vector(1, 1), 1, 10, HandleExplosion));
+
+            */
 
             if (board_rows > 14) {
                 AddBubble(board_rows-1, board_rows-1, VIRUS_BUBBLE_COLOR, 0.8, true);
@@ -330,6 +334,7 @@ class Game {
                                     growthRate = (bubbleGrowthFactorMax * 10)*resourceItem.PercentToMax();
 
                                     if (resourceItem.MaxLevel() && item.growthFactor >= bubbleGrowthFactorMax) {
+                                        CheckResourceUpgrade(i, j);
                                         PopBubble(i, j, 1, false);
                                     }
 
@@ -650,6 +655,32 @@ class Game {
             return closestTargetIndex;
         }
 
+        function CheckResourceUpgrade(row, col) {
+            let alreadyUpgraded = CheckResourceUpgradeNeighbor(row-1, col-1, false);
+            alreadyUpgraded = CheckResourceUpgradeNeighbor(row-1, col, alreadyUpgraded);
+            alreadyUpgraded = CheckResourceUpgradeNeighbor(row-1, col+1, alreadyUpgraded);
+            alreadyUpgraded = CheckResourceUpgradeNeighbor(row, col-1, alreadyUpgraded);
+            alreadyUpgraded = CheckResourceUpgradeNeighbor(row, col+1, alreadyUpgraded);
+            alreadyUpgraded = CheckResourceUpgradeNeighbor(row+1, col-1, alreadyUpgraded);
+            alreadyUpgraded = CheckResourceUpgradeNeighbor(row+1, col, alreadyUpgraded);
+            alreadyUpgraded = CheckResourceUpgradeNeighbor(row+1, col+1, alreadyUpgraded);
+        }
+
+        function CheckResourceUpgradeNeighbor(row, col, alreadyUpgraded) {
+            if (alreadyUpgraded) { return true; }
+            let b = board[row][col].items[0];
+            if (b && b.Pop && b.growthFactor < minBubblePopGrowthFactor) {
+                for (let i=0;i<board[row][col].items.length;i++) {
+                    if (board[row][col].items[i].Launch) {
+                        return;
+                    }
+                }
+                board[row][col].AddItem(new Projectile(PROJECTILE_COLOR, defaultBubbleGrowthFactor, new Vector(1, 1), 1, 10, HandleExplosion));
+                return true;
+            }
+            return alreadyUpgraded;
+        }
+
         function Setup() {
             console.log("Game object being constructed.");
             CreateBoard();
@@ -670,7 +701,7 @@ class Cell {
         this.Render = function (x, y, size, context, data) {
             for (let i=0; i<this.items.length; i++) {
                 this.items[i].Render(x, y, size, context, data);
-                if (this.items[i].animationFinished) {
+                if (this.items[i].animationFinished || this.items[i].arrived) {
                     this.items.splice(i, 1);
                 }
             }
@@ -861,14 +892,14 @@ class ResourceNode {
 }
 
 class Projectile {
-    constructor(color, size, vector, destinationX, destinationY, destinationCol, destinationRow, power, level, destinationAction) {
+    constructor(color, size, vector, power, level, destinationAction) {
         this.color = color;
         this.size = size;
         this.vector = vector;
-        this.destinationX = destinationX;
-        this.destinationY = destinationY;
-        this.destinationCol = destinationCol;
-        this.destinationRow = destinationRow;
+        this.destinationX = 0;
+        this.destinationY = 0;
+        this.destinationCol = 0;
+        this.destinationRow = 0;
         this.power = power;
         this.level = level;
         this.traveled = new Vector(0, 0, 0, 0);
