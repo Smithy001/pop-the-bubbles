@@ -299,7 +299,7 @@ class Game {
                             }
 
                             if (resourceItem && resourceItem.Resource) {
-                                growthRate = bubbleGrowthFactorMax * 10;
+                                growthRate = (bubbleGrowthFactorMax * 10)*resourceItem.PercentToMax();
 
                                 if (resourceItem.MaxLevel() && item.growthFactor >= bubbleGrowthFactorMax) {
                                     PopBubble(i, j, 1, false);
@@ -347,7 +347,7 @@ class Game {
             if (poppedAlready.hasOwnProperty(row+','+col) == true) {
             //    return;
             } else {
-                poppedAlready[row+','+col] = true;
+                //poppedAlready[row+','+col] = true;
             }
 
             let b = board[row][col].GetItem();
@@ -423,7 +423,7 @@ class Game {
             } else {
                 //There's already a bubble, but is it on the same side as the one that just popped?
                 
-                if (virus != b.virus) {
+                if ((virus && !b.virus) || (!virus && b.virus)) {
                     if (b.growthFactor < minBubblePopGrowthFactor) {
                         b.growthFactor = 0;
                     }
@@ -702,7 +702,7 @@ class ResourceNode {
         var maxLevel = 10;
 
         this.Render = function (x, y, size, context, data) {
-            let arcSize = (this.size*(this.level/maxLevel))*size;
+            let arcSize = (this.size*(this.PercentToMax()))*size;
 
             context.beginPath();
             context.arc(x, y, arcSize, 0, Math.PI * 2, true);
@@ -713,6 +713,10 @@ class ResourceNode {
         this.Resource = function() { return true; };
 
         this.MaxLevel = function() { return (this.level >= maxLevel); }
+
+        this.PercentToMax = function() {
+            return this.level/maxLevel;
+        }
 
         this.LevelUp = function() { 
             if (this.level < maxLevel) {
