@@ -192,6 +192,11 @@ class App {
         }
 
         function HandleMouseMove(e) {
+            let row = Math.floor((e.y - game.top) / game.cell_width);
+            let col = Math.floor((e.x - game.left) / game.cell_width);
+            let textContent = e.x + ', ' + e.y + '. Row: ' + row + ', Col: ' + col;
+            document.getElementById('debug').textContent = textContent;
+
             if (!mouseDown) { return; }
             if (mouseMoveLimit == true) { return; }
 

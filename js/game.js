@@ -60,6 +60,18 @@ class Game {
 
             AddStartingResourceNodes();
 
+            
+            let endRow = board_rows-2;
+            let endCol = 2;
+            let endX = this.left + (endCol * this.cell_width) + (this.cell_width*0.5);
+            let endY = this.top + (endRow * this.cell_width) + (this.cell_width*0.5);
+
+
+            AddResourceNode(endRow, endCol, RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
+            
+
+            board[0][0].AddItem(new Projectile('#a837ff', defaultBubbleGrowthFactor, new Vector(1, 1), endX, endY, 1, 10));
+
             if (board_rows > 14) {
                 AddBubble(board_rows-1, board_rows-1, VIRUS_BUBBLE_COLOR, 0.8, true);
             }
@@ -351,6 +363,14 @@ class Game {
             }
 
             let b = board[row][col].GetItem();
+
+            if (b.launched == false) {
+                let changeX = b.destinationX-b.x;
+                let changeY = b.destinationY-b.y;
+
+                let slope = changeY/changeX;
+                b.Launch(slope);
+            }
 
             if (!b.Pop) { return; }
             
@@ -687,9 +707,11 @@ class Droplet {
 
 
 class Vector {
-    constructor (x, y) {
+    constructor (x, y, velocityX, velocityY) {
         this.x = x;
         this.y = y;
+        this.velocityX = velocityX;
+        this.velocityY = velocityY;
     }
 }
 
@@ -725,3 +747,248 @@ class ResourceNode {
         }
     }
 }
+
+class Projectile {
+    constructor(color, size, vector, destinationX, destinationY, power, level) {
+        this.color = color;
+        this.size = size;
+        this.vector = vector;
+        this.destinationX = destinationX;
+        this.destinationY = destinationY;
+        this.power = power;
+        this.level = level;
+        this.traveled = new Vector(0, 0, 0, 0);
+        this.spin = 25;
+        this.x = 0;
+        this.y = 0;
+        this.arrived = false;
+        this.launched = false;
+        
+        var constructionProgress = 100;
+        var maxConstructionProgress = 100;
+        var timeTicks = 0;
+
+        this.Render = function (x, y, size, context, data) {
+            if (this.arrived) {
+                return;
+            }
+
+            let objectSize = this.size*size*(constructionProgress/maxConstructionProgress);
+            
+            let arcSize = this.size*size*0.5;
+
+            //context.beginPath();
+            //context.arc(x + this.traveled.x, y + this.traveled.y, arcSize, 0, Math.PI * 2, true);
+            //context.arc(x, y, arcSize, 0, Math.PI * 2, true);
+
+
+            //context.arc(x - (objectSize*0.5) + this.traveled.x, y - (objectSize*0.5) + this.traveled.y, arcSize, 0, Math.PI * 2, true);
+            //context.fillStyle = '#ffffff';
+            //context.fill();
+            
+
+            
+            let xOfflet = x - (size*0.5);
+            let yOfflet = y - (size*0.5);
+
+            
+
+            // Non-rotated rectangle
+            //context.fillStyle = 'gray';
+            //context.fillRect(xOfflet, yOfflet, size, size);
+
+            // Rotated rectangle
+            
+            //context.fillStyle = 'red';
+            //context.fillRect(100, 0, 80, 20);
+
+            //context.moveTo(x - (objectSize*0.5) + this.traveled.x, y - (height*0.5) + this.traveled.x);
+            //context.arc(0, 0, 5, 0, 2 * Math.PI);
+
+            //context.rotate((45 + this.traveled.x) * Math.PI / 180);
+
+            // Matrix transformation
+/*                        
+            context.translate(x - (objectSize*0.5) + this.traveled.x, y - (height*0.5) + this.traveled.y);
+            context.rotate((this.traveled.x + 10) * Math.PI / 180);
+            context.translate(-(x - (objectSize*0.5) + this.traveled.x), -(y - (height*0.5) + this.traveled.y));
+
+            context.beginPath();
+            context.moveTo(x - (objectSize*0.5) + this.traveled.x, y - (height*0.5) + this.traveled.y);
+            context.lineTo(x + (objectSize*0.5) + this.traveled.x, y - (height*0.5) + this.traveled.y);
+            context.lineTo(x + this.traveled.x, y + (height * 0.5) + this.traveled.y);
+            context.closePath();
+*/
+            
+            let movingX = x + this.traveled.x;
+            let movingY = y + this.traveled.y;
+
+            this.x = movingX;
+            this.y = movingY;
+
+            let length = objectSize;
+            let height = length * Math.cos(Math.PI / 6);
+            
+            let diff = (length-height)*0.5;
+
+            xOfflet = movingX - (length*0.5);
+            yOfflet = movingY - (height*0.5);
+            
+
+            let translateX = movingX; //(length*0.5);
+            let translateY = movingY - diff; //(height*0.5);
+
+            //context.moveTo(movingX, movingY);
+
+            
+            context.translate(translateX, translateY);
+            //context.rotate(((this.traveled.x + this.traveled.y) * this.spin) * Math.PI / 180);
+            context.rotate((timeTicks * this.spin) * Math.PI / 180);
+            //context.rotate((10) * Math.PI / 180);
+            context.translate(-(translateX), -(translateY));          
+            
+
+
+            
+/*
+            context.translate(movingX - (length*0.5), movingY - (height*0.5));
+            context.rotate((this.traveled.x * 10) * Math.PI / 180);
+            //context.rotate((10) * Math.PI / 180);
+            context.translate(-(movingX - (length*0.5)), -(movingY - (height*0.5)));
+*/
+
+            context.beginPath();
+            context.moveTo(xOfflet, yOfflet);
+            context.lineTo(xOfflet + length, yOfflet);
+            context.lineTo(movingX, yOfflet+height);
+            //context.lineTo(movingX - (length*0.5), movingY + (height*0.5));
+            context.closePath();
+
+
+            if (constructionProgress < maxConstructionProgress) {
+                context.fillStyle = '#ffffff';
+                context.fill();
+
+                context.strokeStyle = this.color;
+                context.lineWidth = 2;
+                context.stroke();
+
+
+            } else {
+                context.fillStyle = this.color;
+                context.fill();
+            }
+
+            //context.fillStyle = this.color;
+            //context.fill();
+
+
+            //context.translate(x, y);
+            //
+            //context.translate(-x, -y);
+
+            
+
+            // Matrix transformation
+            //context.translate(x, y);
+            //context.rotate(this.traveled.x * Math.PI / 180);
+            //context.translate(-x, -y);
+/*
+            context.beginPath();
+            context.moveTo(x - (objectSize*0.5) + this.traveled.x, y - (height*0.5) + this.traveled.y);
+            context.lineTo(x + (objectSize*0.5) + this.traveled.x, y - (height*0.5) + this.traveled.y);
+            context.lineTo(x + this.traveled.x, y + (height * 0.5) + this.traveled.y);
+            context.closePath();
+
+            // Rotated rectangle
+            context.fillStyle = 'red';
+            context.fillRect(x-(objectSize*0.5), y-(objectSize*0.5), objectSize, objectSize);
+*/
+
+
+
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+            /*
+            let height = objectSize * Math.cos(Math.PI / 6);
+            
+            let movingX = x; // + this.traveled.x;
+            let movingY = y; // + this.traveled.y;
+
+
+            
+
+
+            context.translate(movingX - (objectSize*0.5), movingY - (objectSize*0.5));
+            //context.rotate((this.traveled.x * 10) * Math.PI / 180);
+            context.rotate((10) * Math.PI / 180);
+            context.translate(-(movingX - (objectSize*0.5)), -(movingY - (objectSize*0.5)));
+
+
+            context.beginPath();
+            context.moveTo(movingX - (objectSize*0.5), movingY - (objectSize*0.5));
+            context.lineTo(movingX + (objectSize*0.5), movingY - (objectSize*0.5));
+            context.lineTo(movingX, movingY + (objectSize * 0.5));
+            context.closePath();
+            */
+
+
+            context.setTransform(1, 0, 0, 1, 0, 0);
+        };
+
+
+        this.Launch = function(slope) {
+            this.slope = slope;
+            this.launched = true;
+        }
+
+        this.Grow = function() {
+            timeTicks += 1;
+
+            if (constructionProgress < maxConstructionProgress) {
+                constructionProgress += 1;
+            }
+
+            if (!this.launched) {
+                return;
+            }
+            let changeX = this.destinationX-this.x;
+            let changeY = this.destinationY-this.y;
+
+            if (changeX+changeY<0) {
+                this.arrived = true;
+                return;
+            }
+
+            let slope = changeY/changeX;
+
+            slope = this.slope;
+
+            this.traveled.velocityX = (this.power + this.level);
+            this.traveled.velocityY = this.slope*(this.power + this.level);
+
+            // y − y1 = m(x − x1)
+
+
+
+            //this.traveled.velocityX = destinationX-x;
+            //this.traveled.velocityY = destinationY-y;
+
+
+            this.traveled.x += this.traveled.velocityX;
+            this.traveled.y += this.traveled.velocityY;
+        };
+    }
+} 
