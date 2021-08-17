@@ -214,10 +214,14 @@ class App {
             mouseDown = true;
             CheckGameEvent(e.x, e.y);
 
-            ScrollMap(e);
+            ScrollMap(e.x, e.y);
         }
 
-        function ScrollMap(e) {
+        function ScrollMap(x, y) {
+            if (scrollLimit == true) { return; }
+            scrollLimit = true;
+            setTimeout(function() {scrollLimit = false;}, 150);
+            
             /*
             if (e.x < GAME_X) { return; }
             if (e.y < GAME_Y) { return; }
@@ -226,18 +230,18 @@ class App {
             if (e.y > GAME_Y+GAME_SIZE) { return; }
 */
 
-            if (e.x < GAME_X) { game.scrolledRight--; }
-            if (e.y < GAME_Y) { game.scrolledDown--; }
+            if (x < GAME_X) { game.scrolledRight--; }
+            if (y < GAME_Y) { game.scrolledDown--; }
 
-            if (e.x > GAME_X+GAME_SIZE) { game.scrolledRight++; }
-            if (e.y > GAME_Y+GAME_SIZE) { game.scrolledDown++; }
+            if (x > GAME_X+GAME_SIZE) { game.scrolledRight++; }
+            if (y > GAME_Y+GAME_SIZE) { game.scrolledDown++; }
 
 
-            if (e.x < GAME_X + SCROLL_MARGIN) { game.scrolledRight--; }
-            if (e.y < GAME_Y + SCROLL_MARGIN) { game.scrolledDown--; }
+            if (x < GAME_X + SCROLL_MARGIN) { game.scrolledRight--; }
+            if (y < GAME_Y + SCROLL_MARGIN) { game.scrolledDown--; }
             
-            if (e.x > GAME_X + GAME_SIZE - SCROLL_MARGIN) { game.scrolledRight++; }
-            if (e.y > GAME_Y + GAME_SIZE - SCROLL_MARGIN) { game.scrolledDown++; }
+            if (x > GAME_X + GAME_SIZE - SCROLL_MARGIN) { game.scrolledRight++; }
+            if (y > GAME_Y + GAME_SIZE - SCROLL_MARGIN) { game.scrolledDown++; }
 
             if (game.scrolledRight < 0) { game.scrolledRight = 0; }
             if (game.scrolledDown < 0) { game.scrolledDown = 0; }
@@ -265,10 +269,7 @@ class App {
             setTimeout(function() {mouseMoveLimit = false;}, 50);
             CheckGameEvent(e.x, e.y);   
 
-            if (scrollLimit == true) { return; }
-            scrollLimit = true;
-            setTimeout(function() {scrollLimit = false;}, 150);
-            ScrollMap(e);
+            ScrollMap(e.x, e.y);
         }
 
         function HandleTouchStart(e) {
@@ -282,6 +283,7 @@ class App {
               console.log("touchstart:" + i + "...");
               currentTouches.push(copyTouch(touches[i]));
               CheckGameEvent(touches[i].clientX, touches[i].clientY);
+              ScrollMap(touches[i].clientX, touches[i].clientY);
             }
         }
         
@@ -328,6 +330,7 @@ class App {
                 if (idx >= 0) {
                     console.log("continuing touch "+idx);
                     CheckGameEvent(touches[i].clientX, touches[i].clientY)
+                    ScrollMap(touches[i].clientX, touches[i].clientY);
                 } else {
                     console.log("can't figure out which touch to continue");
                 }
