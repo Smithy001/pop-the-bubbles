@@ -457,22 +457,27 @@ class Game {
                 }
     
                 if (!b.Pop) { continue; }
-                
-                if (b.virus && !isVirus) { continue; }
+
+                if (!isVirus) {
+                    console.log('You popped a bubble at ' + row + ' ' + col);
+                }
     
                 if (b.growthFactor < minBubblePopGrowthFactor) {
                     continue;
                 }
                 
-                if (!isVirus) {
-                    console.log('You popped a bubble at ' + row + ' ' + col);
+                if (b.virus && !isVirus) { b.growthFactor *= 0.5; }
+                if (b.virus) { isVirus = true; }
+
+                if (b.growthFactor < minBubblePopGrowthFactor) {
+                    continue;
                 }
-    
+
                 let energySpawlLostFactor = 0.9;
                 let energyLost = b.growthFactor*0.7;
                 let newBubbleEnergy =  energyLost*energySpawlLostFactor;
                 let color = bubbleColor;
-    
+
                 if (isVirus) {
                     color = VIRUS_BUBBLE_COLOR;
                 } else {
