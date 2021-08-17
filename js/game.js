@@ -333,17 +333,17 @@ class Game {
                                 if (resourceItem && resourceItem.Resource) {
                                     growthRate = (bubbleGrowthFactorMax * 10)*resourceItem.PercentToMax();
 
+                                    if ((item.growthFactor < bubbleGrowthFactorMax && !resourceItem.MaxLevel())|| item.virus) {
+                                        victory = false;
+                                    }
+
                                     if (resourceItem.MaxLevel() && item.growthFactor >= bubbleGrowthFactorMax) {
                                         CheckResourceUpgrade(i, j);
                                         PopBubble(i, j, 1, false);
                                     }
-
-                                    if ((item.growthFactor < bubbleGrowthFactorMax && !resourceItem.MaxLevel())|| item.virus) {
-                                        victory = false;
-                                    }
                                 }
                                 item.Grow(bubbleGrowthFactorMax, growthRate);                            
-                            } else if (item.Resource) {
+                            } else if (h == 0 && item.Resource) {
                                 victory = false;
                             }
                         }
@@ -578,9 +578,9 @@ class Game {
             // Level 1
             if (board_rows == 3) {
                 AddResourceNode(2, 2, RESOURCE_NODE_COLOR, resourceNodeSize);
-                AddResourceNode(2, 0, RESOURCE_NODE_COLOR, resourceNodeSize);
-                AddResourceNode(0, 0, RESOURCE_NODE_COLOR, resourceNodeSize);
-                AddResourceNode(0, 2, RESOURCE_NODE_COLOR, resourceNodeSize);
+                //AddResourceNode(2, 0, RESOURCE_NODE_COLOR, resourceNodeSize);
+                //AddResourceNode(0, 0, RESOURCE_NODE_COLOR, resourceNodeSize);
+                //AddResourceNode(0, 2, RESOURCE_NODE_COLOR, resourceNodeSize);
             }
 
             if (board_rows == 5) {
