@@ -1,10 +1,11 @@
 console.log("Game class being imported.");
 
 class Game {
-    constructor(left, top, board_rows, cell_width, bubbleColor) {
+    constructor(left, top, worldSize, board_rows, cell_width, bubbleColor) {
         var EVENT_LOOP_MS = 100;
         var MAX_CASCADE = 1;
-        
+        var WORLD_SIZE = worldSize;
+
         var virusChoicePower;
         var virusCells;
         var board, eventLoop;
@@ -33,6 +34,9 @@ class Game {
         this.top = top;
         this.left = left;
         this.cell_width = cell_width;
+
+        this.scrolledRight = 0;
+        this.scrolledDown = 0;
 
         var poppedAlready = {};
 
@@ -105,12 +109,15 @@ class Game {
         }
 
         this.Render = function (context) {
-            for (let i=0; i<board_rows; i++) {
-                for (let j=0; j<board_rows; j++) {
-                    let x = this.left + (j * this.cell_width) + (this.cell_width*0.5);
-                    let y = this.top + (i * this.cell_width) + (this.cell_width*0.5);
+            for (let i=this.scrolledDown; i<(board_rows + this.scrolledDown); i++) {
+                for (let j=this.scrolledRight; j<(board_rows + this.scrolledRight); j++) {
+                    let x = this.left - (this.scrolledRight * this.cell_width) + (j * this.cell_width) + (this.cell_width*0.5);
+                    let y = this.top - (this.scrolledDown * this.cell_width) + (i * this.cell_width) + (this.cell_width*0.5);
 
                     let smallCell = false;
+
+                    if (!board[i] || !board[i][j]) {continue; }
+
                     if (board[i][j].items[0] && board[i][j].items[0].growthFactor < minBubblePopGrowthFactor) {
                         smallCell = true;
                     }
@@ -131,8 +138,8 @@ class Game {
                 return;
             }
 
-            let celx = Math.floor(relx / this.cell_width);
-            let cely = Math.floor(rely / this.cell_width);
+            let celx = this.scrolledRight + Math.floor(relx / this.cell_width);
+            let cely = this.scrolledDown + Math.floor(rely / this.cell_width);
 
             if (poppedAlready.hasOwnProperty(cely+','+celx) == true) {
                 console.log('Already popped a bubble at ' + cely + ' ' + celx);
@@ -318,9 +325,9 @@ class Game {
             let newVirusCount = 0;
 
             let victory = true;
-            for (let i=0; i<board_rows; i++) {
-                for (let j=0; j<board_rows; j++) {
-                    for (let h=0; h<board_rows; h++) {
+            for (let i=0; i<board.length; i++) {
+                for (let j=0; j<board.length; j++) {
+                    for (let h=0; h<board[i][j].items.length; h++) {
                         let item = board[i][j].items[h];
                         if (item) {
                             if (item.Grow) {
@@ -373,9 +380,9 @@ class Game {
             board = [];
             virusCells = [];
 
-            for (let i=0; i<board_rows; i++) {
+            for (let i=0; i<WORLD_SIZE; i++) {
                 let row = [];
-                for (let j=0; j<board_rows; j++) {
+                for (let j=0; j<WORLD_SIZE; j++) {
                     row.push(new Cell(i, j, MAX_ITEMS_PER_CELL));
                 }
                 board.push(row);
@@ -511,9 +518,9 @@ class Game {
 
         function CreateBubble(row, col, energy, depth, virus, color) {
             if (!depth) {depth=1;}
-            if (row >= board_rows) { return; }
+            if (row >= board.length) { return; }
             if (row < 0) { return; }
-            if (col >= board_rows) { return; }
+            if (col >= board.length) { return; }
             if (col < 0) { return; }
 
             let b = board[row][col].GetItem();
@@ -621,6 +628,7 @@ class Game {
         }
         
         function AddResourceNode(row, col, color, size) {
+            if (!board[row] || !board[row][col]) {return;}
             board[row][col].AddItem(new ResourceNode(color, size));
         }
 

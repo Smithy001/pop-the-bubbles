@@ -4,9 +4,16 @@ class App {
 
         var WIDTH = window.innerWidth;
         var HEIGHT = window.innerHeight;
-        var GAME_ROWS = (level * 2) + 1;
+        var GAME_ROWS = Math.min(21,(level * 2) + 1);
+        var WORLD_SIZE = GAME_ROWS;
+
+        if (level>2) {
+            WORLD_SIZE += 1 + Math.floor(level*0.5);
+        }
+
         var GAME_CELL_WIDTH, GAME_SIZE, GAME_X, GAME_Y;
         var GAME_MARGIN = 75;
+        var SCROLL_MARGIN = 0;
         var BORDER_WIDTH = 5;
         var BACKGROUND_COLOR = '#4b6a79' // '#cbeeff';
         var BACKGROUND_COLOR_SECONDARY = '#1b3744' // '#afe4ff';
@@ -20,6 +27,7 @@ class App {
         var canvas, context;
         var mouseDown = false;
         var mouseMoveLimit = false;
+        var scrollLimit = false;
 
         var currentTouches = [];
 
@@ -105,7 +113,7 @@ class App {
         }
 
         function SetupGame() {
-            game = new Game(GAME_X, GAME_Y, GAME_ROWS, GAME_CELL_WIDTH, BUBBLE_COLOR);
+            game = new Game(GAME_X, GAME_Y, WORLD_SIZE, GAME_ROWS, GAME_CELL_WIDTH, BUBBLE_COLOR);
         }
 
         function ResizeCanvas() {
@@ -123,6 +131,8 @@ class App {
             GAME_SIZE = GAME_CELL_WIDTH * GAME_ROWS;
             GAME_Y = HEIGHT*0.5 - GAME_SIZE*0.5;
             GAME_X = WIDTH*0.5 - GAME_SIZE*0.5;
+
+            SCROLL_MARGIN = GAME_SIZE * 0.2;
 
             if (game) {
                 game.left = GAME_X;
@@ -144,6 +154,7 @@ class App {
                 GAME_SIZE+BORDER_WIDTH*2);
 
 
+            
             var gradientFill = context.createLinearGradient(GAME_X,GAME_Y,GAME_SIZE,GAME_SIZE);
 			gradientFill.addColorStop(0,BACKGROUND_COLOR);
             gradientFill.addColorStop(1,BACKGROUND_COLOR_SECONDARY);
@@ -156,6 +167,17 @@ class App {
                 GAME_SIZE, 
                 GAME_SIZE);
 
+            var gradientFill = context.createLinearGradient(GAME_X,GAME_Y,GAME_SIZE,GAME_SIZE);
+                gradientFill.addColorStop(0,'#567e91');
+                gradientFill.addColorStop(1,'#244a5c');
+    
+            context.fillStyle = gradientFill;
+            
+            context.fillRect(
+                GAME_X+SCROLL_MARGIN, 
+                GAME_Y+SCROLL_MARGIN, 
+                GAME_SIZE-SCROLL_MARGIN*2, 
+                GAME_SIZE-SCROLL_MARGIN*2);
 
             game.Render(context, WIDTH, HEIGHT);
             let score = document.getElementById('score');
@@ -172,6 +194,11 @@ class App {
             document.getElementById('next_level_button').style.display = "none";
             level += 1;
             GAME_ROWS = (level * 2) + 1;
+            WORLD_SIZE = GAME_ROWS;
+            if (level>2) {
+                WORLD_SIZE += 1 + Math.floor(level*0.5);
+            }
+            
             Main();
 
             StartGame();
@@ -183,8 +210,40 @@ class App {
                 console.log('You can only click one at a time');
                 return;
             }
+
             mouseDown = true;
             CheckGameEvent(e.x, e.y);
+
+            ScrollMap(e);
+        }
+
+        function ScrollMap(e) {
+            /*
+            if (e.x < GAME_X) { return; }
+            if (e.y < GAME_Y) { return; }
+
+            if (e.x > GAME_X+GAME_SIZE) { return; }
+            if (e.y > GAME_Y+GAME_SIZE) { return; }
+*/
+
+            if (e.x < GAME_X) { game.scrolledRight--; }
+            if (e.y < GAME_Y) { game.scrolledDown--; }
+
+            if (e.x > GAME_X+GAME_SIZE) { game.scrolledRight++; }
+            if (e.y > GAME_Y+GAME_SIZE) { game.scrolledDown++; }
+
+
+            if (e.x < GAME_X + SCROLL_MARGIN) { game.scrolledRight--; }
+            if (e.y < GAME_Y + SCROLL_MARGIN) { game.scrolledDown--; }
+            
+            if (e.x > GAME_X + GAME_SIZE - SCROLL_MARGIN) { game.scrolledRight++; }
+            if (e.y > GAME_Y + GAME_SIZE - SCROLL_MARGIN) { game.scrolledDown++; }
+
+            if (game.scrolledRight < 0) { game.scrolledRight = 0; }
+            if (game.scrolledDown < 0) { game.scrolledDown = 0; }
+
+            if (game.scrolledRight > WORLD_SIZE - GAME_ROWS) { game.scrolledRight = WORLD_SIZE - GAME_ROWS; }
+            if (game.scrolledDown > WORLD_SIZE - GAME_ROWS) { game.scrolledDown = WORLD_SIZE - GAME_ROWS; }
         }
 
         function HandleMouseUp(e) {
@@ -201,10 +260,15 @@ class App {
 
             if (!mouseDown) { return; }
             if (mouseMoveLimit == true) { return; }
-
+            
             mouseMoveLimit = true
             setTimeout(function() {mouseMoveLimit = false;}, 50);
             CheckGameEvent(e.x, e.y);   
+
+            if (scrollLimit == true) { return; }
+            scrollLimit = true;
+            setTimeout(function() {scrollLimit = false;}, 150);
+            ScrollMap(e);
         }
 
         function HandleTouchStart(e) {
