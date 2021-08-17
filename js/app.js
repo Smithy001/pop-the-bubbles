@@ -5,12 +5,8 @@ class App {
         var WIDTH = window.innerWidth;
         var HEIGHT = window.innerHeight;
         var GAME_ROWS = Math.min(21,(level * 2) + 1);
-        var WORLD_SIZE = GAME_ROWS;
-
-        if (level>2) {
-            WORLD_SIZE += 1 + Math.floor(level*0.5);
-        }
-
+        var WORLD_SIZE;
+        
         var GAME_CELL_WIDTH, GAME_SIZE, GAME_X, GAME_Y;
         var GAME_MARGIN = 75;
         var SCROLL_MARGIN = 0;
@@ -113,6 +109,7 @@ class App {
         }
 
         function SetupGame() {
+            setWorldSize();
             game = new Game(GAME_X, GAME_Y, WORLD_SIZE, GAME_ROWS, GAME_CELL_WIDTH, BUBBLE_COLOR);
         }
 
@@ -194,10 +191,6 @@ class App {
             document.getElementById('next_level_button').style.display = "none";
             level += 1;
             GAME_ROWS = (level * 2) + 1;
-            WORLD_SIZE = GAME_ROWS;
-            if (level>2) {
-                WORLD_SIZE += 1 + Math.floor(level*0.5);
-            }
             
             Main();
 
@@ -221,7 +214,7 @@ class App {
             if (scrollLimit == true) { return; }
             scrollLimit = true;
             setTimeout(function() {scrollLimit = false;}, 150);
-            
+
             /*
             if (e.x < GAME_X) { return; }
             if (e.y < GAME_Y) { return; }
@@ -379,6 +372,13 @@ class App {
             return level;
         }
 
+        function setWorldSize() {
+            WORLD_SIZE = GAME_ROWS;
+
+            if (level>5) {
+                WORLD_SIZE += 1 + Math.floor(level*0.2);
+            }
+        }
         Main();
     }
 }
