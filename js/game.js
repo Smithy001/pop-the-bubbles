@@ -673,19 +673,18 @@ class Game {
             let b = board[row][col];
 
             if (!b) {return false;}
-
             
             for(let i=0;i<board[row][col].items.length;i++) {
                 let item = board[row][col].items[i];
 
-                if (item.launched == false) {
+                if (item.launched == false && virusCells.length > 0) {
                     let changeX = item.destinationX-item.x;
                     let changeY = item.destinationY-item.y;
         
                     let slope = changeY/changeX;
         
                     let target = FindTarget(row, col);
-                    
+
                     item.destinationCol = virusCells[target].y;
                     item.destinationRow = virusCells[target].x;
                     item.destinationX = left + (item.destinationCol * cell_width) + (cell_width*0.5);
@@ -700,8 +699,10 @@ class Game {
 
         function LaunchDefense(row, col, alreadyLaunched) {
             if (alreadyLaunched) { return true; }
-            let b = board[row][col].items;
+            
+            if (!board[row] || !board[row][col]) {return alreadyLaunched;}
 
+            let b = board[row][col].items;
             
             for (let i=0;i<b.length;i++){
                 let item = b[i];
@@ -714,6 +715,8 @@ class Game {
 
         function CheckResourceUpgradeNeighbor(row, col, alreadyUpgraded) {
             if (alreadyUpgraded) { return true; }
+            
+            if (!board[row] || !board[row][col]) {return alreadyUpgraded;}
             let b = board[row][col].items[0];
             if (b && b.Pop && b.growthFactor < minBubblePopGrowthFactor) {
                 AddTower(row, col);
