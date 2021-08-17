@@ -332,7 +332,7 @@ class Game {
                         if (item) {
                             if (item.Grow) {
                                 let resourceItem = board[i][j].items[1];
-                                let growthRate = bubbleGrowthFactorMax-(bubblesCount/bubblesMax);
+                                let growthRate = bubbleGrowthFactorMax; //-(bubblesCount/bubblesMax);
 
                                 if (item.virus) {
                                     growthRate = bubbleGrowthFactorMax-(virusCount/bubblesMax);
