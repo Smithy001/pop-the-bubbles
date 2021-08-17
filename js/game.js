@@ -36,6 +36,8 @@ class Game {
 
         var poppedAlready = {};
 
+        this.getGameBoard = function() { return board; }
+
         this.GetScore = function () {
             if (!startTime) {
                 return 0;
@@ -89,7 +91,7 @@ class Game {
 
             */
 
-            if (board_rows > 14) {
+            if (board_rows > 10) {
                 AddBubble(board_rows-1, board_rows-1, VIRUS_BUBBLE_COLOR, 0.8, true);
             }
         };
@@ -112,7 +114,9 @@ class Game {
                     if (board[i][j].items[0] && board[i][j].items[0].growthFactor < minBubblePopGrowthFactor) {
                         smallCell = true;
                     }
-                    board[i][j].Render(x, y, this.cell_width, context, {'smallCell': smallCell});
+                    if (board[i][j].Render) {
+                        board[i][j].Render(x, y, this.cell_width, context, {'smallCell': smallCell});
+                    }
                 }
             }
         };
@@ -354,6 +358,10 @@ class Game {
             bubblesCount = newBubbleCount;
             virusCount = newVirusCount;
 
+            if (board_rows > 10 && virusCount > 0) {
+                victory = false;
+            }
+
             if (victory == true) {
                 endTime = Date.now();
                 console.log("You won.");
@@ -438,30 +446,15 @@ class Game {
                 let b = board[row][col].items[i];
 
                 if (b.launched == false) {
-                    
-
-
-                    let changeX = b.destinationX-b.x;
-                    let changeY = b.destinationY-b.y;
-    
-                    let slope = changeY/changeX;
-
-                    let target = FindTarget(row, col);
-                    
-                    b.destinationCol = virusCells[target].y;
-                    b.destinationRow = virusCells[target].x;
-                    b.destinationX = left + (b.destinationCol * cell_width) + (cell_width*0.5);
-                    b.destinationY = top + (b.destinationRow * cell_width) + (cell_width*0.5);
-
-                    b.Launch(slope);
+                    LaunchProjectile(row, col);
                 }
     
-                if (!b.Pop) { return; }
+                if (!b.Pop) { continue; }
                 
-                if (b.virus && !isVirus) { return; }
+                if (b.virus && !isVirus) { continue; }
     
                 if (b.growthFactor < minBubblePopGrowthFactor) {
-                    return;
+                    continue;
                 }
                 
                 if (!isVirus) {
@@ -512,7 +505,7 @@ class Game {
 
         function CreateBubbleAnimation(row, col, energy, color) {
             if (board[row] && board[row][col]) {
-                board[row][col].AddItem(new BubblePopAnimation(energy, color));
+                board[row][col].AddItem(new BubblePopAnimation(energy, color), false, true);
             }
         }
 
@@ -664,21 +657,93 @@ class Game {
             alreadyUpgraded = CheckResourceUpgradeNeighbor(row+1, col-1, alreadyUpgraded);
             alreadyUpgraded = CheckResourceUpgradeNeighbor(row+1, col, alreadyUpgraded);
             alreadyUpgraded = CheckResourceUpgradeNeighbor(row+1, col+1, alreadyUpgraded);
+
+            
+            let alreadyLaunched = LaunchDefense(row-1, col-1, alreadyUpgraded);
+            alreadyLaunched = LaunchDefense(row-1, col, alreadyLaunched);
+            alreadyLaunched = LaunchDefense(row-1, col+1, alreadyLaunched);
+            alreadyLaunched = LaunchDefense(row, col-1, alreadyLaunched);
+            alreadyLaunched = LaunchDefense(row, col+1, alreadyLaunched);
+            alreadyLaunched = LaunchDefense(row+1, col-1, alreadyLaunched);
+            alreadyLaunched = LaunchDefense(row+1, col, alreadyLaunched);
+            alreadyLaunched = LaunchDefense(row+1, col+1, alreadyLaunched);
+        }
+
+        function LaunchProjectile(row, col) {
+            let b = board[row][col];
+
+            if (!b) {return false;}
+
+            
+            for(let i=0;i<board[row][col].items.length;i++) {
+                let item = board[row][col].items[i];
+
+                if (item.launched == false) {
+                    let changeX = item.destinationX-item.x;
+                    let changeY = item.destinationY-item.y;
+        
+                    let slope = changeY/changeX;
+        
+                    let target = FindTarget(row, col);
+                    
+                    item.destinationCol = virusCells[target].y;
+                    item.destinationRow = virusCells[target].x;
+                    item.destinationX = left + (item.destinationCol * cell_width) + (cell_width*0.5);
+                    item.destinationY = top + (item.destinationRow * cell_width) + (cell_width*0.5);
+        
+                    item.Launch(slope);
+                    return true;
+                }
+            }    
+            return false;
+        }
+
+        function LaunchDefense(row, col, alreadyLaunched) {
+            if (alreadyLaunched) { return true; }
+            let b = board[row][col].items;
+
+            
+            for (let i=0;i<b.length;i++){
+                let item = b[i];
+                if (item.Launch) {
+                    return LaunchProjectile(row, col);
+                }
+            }
+            return alreadyLaunched;
         }
 
         function CheckResourceUpgradeNeighbor(row, col, alreadyUpgraded) {
             if (alreadyUpgraded) { return true; }
             let b = board[row][col].items[0];
             if (b && b.Pop && b.growthFactor < minBubblePopGrowthFactor) {
-                for (let i=0;i<board[row][col].items.length;i++) {
-                    if (board[row][col].items[i].Launch) {
-                        return;
-                    }
-                }
-                board[row][col].AddItem(new Projectile(PROJECTILE_COLOR, defaultBubbleGrowthFactor, new Vector(1, 1), 1, 10, HandleExplosion));
+                AddTower(row, col);
                 return true;
             }
             return alreadyUpgraded;
+        }
+
+        function AddItemToGame(row, col, item, type) {
+            for (let i=0;i<board[row][col].items.length;i++) {
+                if (board[row][col].items[i].uniqueType && board[row][col].items[i].uniqueType == type) {
+                    return false;
+                }
+            }
+            board[row][col].AddItem(item);
+            return true;
+        }
+
+        function AddTower(row, col) {
+            AddItemToGame(row, col, new Tower(row, col, HandleExplosion, AddProjectile), 'tower')
+        }
+
+        function AddProjectile(row, col) {
+            for (let i=0;i<board[row][col].items.length;i++) {
+                if (board[row][col].items[i].Launch) {
+                    return;
+                }
+            }
+            board[row][col].AddItem(new Projectile(PROJECTILE_COLOR, defaultBubbleGrowthFactor, new Vector(1, 1), 1, 10, HandleExplosion));
+            return true;
         }
 
         function Setup() {
@@ -700,7 +765,9 @@ class Cell {
 
         this.Render = function (x, y, size, context, data) {
             for (let i=0; i<this.items.length; i++) {
-                this.items[i].Render(x, y, size, context, data);
+                if (this.items[i].Render) {
+                    this.items[i].Render(x, y, size, context, data);
+                }
                 if (this.items[i].animationFinished || this.items[i].arrived) {
                     this.items.splice(i, 1);
                 }
@@ -716,8 +783,8 @@ class Cell {
             return this.items[0];
         }
 
-        this.AddItem = function(item, first) {
-            if (this.items.length >= this.maxItemsPerCell) {
+        this.AddItem = function(item, first, enforceLimit) {
+            if (enforceLimit && this.items.length >= this.maxItemsPerCell) {
                 return;
             }
             if (first) {
@@ -891,6 +958,27 @@ class ResourceNode {
     }
 }
 
+class Tower {
+    constructor(row, col, destinationAction, buildAction) {
+        this.row = row;
+        this.col = col;
+        this.level = 5;
+        this.destinationAction = destinationAction;
+        this.buildAction = buildAction;
+
+        this.uniqueType = 'tower';
+
+        this.Grow = function() {
+            if (this.level < 5) {
+                this.level += 1;
+            } else {
+                this.level = 1;
+                buildAction(row, col);
+            }
+        };
+    };
+}
+
 class Projectile {
     constructor(color, size, vector, power, level, destinationAction) {
         this.color = color;
@@ -921,49 +1009,10 @@ class Projectile {
             let objectSize = this.size*size*(constructionProgress/maxConstructionProgress);
             
             let arcSize = this.size*size*0.5;
-
-            //context.beginPath();
-            //context.arc(x + this.traveled.x, y + this.traveled.y, arcSize, 0, Math.PI * 2, true);
-            //context.arc(x, y, arcSize, 0, Math.PI * 2, true);
-
-
-            //context.arc(x - (objectSize*0.5) + this.traveled.x, y - (objectSize*0.5) + this.traveled.y, arcSize, 0, Math.PI * 2, true);
-            //context.fillStyle = '#ffffff';
-            //context.fill();
-            
-
-            
+        
             let xOfflet = x - (size*0.5);
             let yOfflet = y - (size*0.5);
 
-            
-
-            // Non-rotated rectangle
-            //context.fillStyle = 'gray';
-            //context.fillRect(xOfflet, yOfflet, size, size);
-
-            // Rotated rectangle
-            
-            //context.fillStyle = 'red';
-            //context.fillRect(100, 0, 80, 20);
-
-            //context.moveTo(x - (objectSize*0.5) + this.traveled.x, y - (height*0.5) + this.traveled.x);
-            //context.arc(0, 0, 5, 0, 2 * Math.PI);
-
-            //context.rotate((45 + this.traveled.x) * Math.PI / 180);
-
-            // Matrix transformation
-/*                        
-            context.translate(x - (objectSize*0.5) + this.traveled.x, y - (height*0.5) + this.traveled.y);
-            context.rotate((this.traveled.x + 10) * Math.PI / 180);
-            context.translate(-(x - (objectSize*0.5) + this.traveled.x), -(y - (height*0.5) + this.traveled.y));
-
-            context.beginPath();
-            context.moveTo(x - (objectSize*0.5) + this.traveled.x, y - (height*0.5) + this.traveled.y);
-            context.lineTo(x + (objectSize*0.5) + this.traveled.x, y - (height*0.5) + this.traveled.y);
-            context.lineTo(x + this.traveled.x, y + (height * 0.5) + this.traveled.y);
-            context.closePath();
-*/
             
             let movingX = x + this.traveled.x;
             let movingY = y + this.traveled.y;
@@ -994,14 +1043,6 @@ class Projectile {
             
 
 
-            
-/*
-            context.translate(movingX - (length*0.5), movingY - (height*0.5));
-            context.rotate((this.traveled.x * 10) * Math.PI / 180);
-            //context.rotate((10) * Math.PI / 180);
-            context.translate(-(movingX - (length*0.5)), -(movingY - (height*0.5)));
-*/
-
             context.beginPath();
             context.moveTo(xOfflet, yOfflet);
             context.lineTo(xOfflet + length, yOfflet);
@@ -1023,72 +1064,6 @@ class Projectile {
                 context.fillStyle = this.color;
                 context.fill();
             }
-
-            //context.fillStyle = this.color;
-            //context.fill();
-
-
-            //context.translate(x, y);
-            //
-            //context.translate(-x, -y);
-
-            
-
-            // Matrix transformation
-            //context.translate(x, y);
-            //context.rotate(this.traveled.x * Math.PI / 180);
-            //context.translate(-x, -y);
-/*
-            context.beginPath();
-            context.moveTo(x - (objectSize*0.5) + this.traveled.x, y - (height*0.5) + this.traveled.y);
-            context.lineTo(x + (objectSize*0.5) + this.traveled.x, y - (height*0.5) + this.traveled.y);
-            context.lineTo(x + this.traveled.x, y + (height * 0.5) + this.traveled.y);
-            context.closePath();
-
-            // Rotated rectangle
-            context.fillStyle = 'red';
-            context.fillRect(x-(objectSize*0.5), y-(objectSize*0.5), objectSize, objectSize);
-*/
-
-
-
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-            /*
-            let height = objectSize * Math.cos(Math.PI / 6);
-            
-            let movingX = x; // + this.traveled.x;
-            let movingY = y; // + this.traveled.y;
-
-
-            
-
-
-            context.translate(movingX - (objectSize*0.5), movingY - (objectSize*0.5));
-            //context.rotate((this.traveled.x * 10) * Math.PI / 180);
-            context.rotate((10) * Math.PI / 180);
-            context.translate(-(movingX - (objectSize*0.5)), -(movingY - (objectSize*0.5)));
-
-
-            context.beginPath();
-            context.moveTo(movingX - (objectSize*0.5), movingY - (objectSize*0.5));
-            context.lineTo(movingX + (objectSize*0.5), movingY - (objectSize*0.5));
-            context.lineTo(movingX, movingY + (objectSize * 0.5));
-            context.closePath();
-            */
-
 
             context.setTransform(1, 0, 0, 1, 0, 0);
         };
@@ -1117,35 +1092,13 @@ class Projectile {
                 destinationAction(this.destinationRow, this.destinationCol);
                 return;
             }
-//if (Math.abs(changeX)+Math.abs(changeY)<this.size) {
 
-            /// keep radians, don't convert to degrees
-            //projectiles[pindex]['angle'] = Math.atan2(y - 200, x - 300); // * 180 / Math.PI;
             let angle = Math.atan2(this.y-this.destinationY, this.x-this.destinationX);
 
             this.traveled.x -= 10 * Math.cos(angle);
             this.traveled.y -= 10 * Math.sin(angle);
 
             return;
-
-            let slope = changeY/changeX;
-
-            slope = this.slope;
-
-            
-
-            this.traveled.velocityX = (this.power + this.level);
-            this.traveled.velocityY = this.slope*(this.power + this.level);
-
-
-
-
-            //this.traveled.velocityX = destinationX-x;
-            //this.traveled.velocityY = destinationY-y;
-
-
-            this.traveled.x += this.traveled.velocityX;
-            this.traveled.y += this.traveled.velocityY;
         };
     }
 } 

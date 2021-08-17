@@ -25,6 +25,8 @@ class App {
 
         console.log("App object is being constructed.");
 
+        this.getGame = function() { return game; }
+
         function Main() {
             SetupCanvas();
             SetupGame();
