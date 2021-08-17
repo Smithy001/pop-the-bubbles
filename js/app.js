@@ -129,7 +129,7 @@ class App {
             GAME_Y = HEIGHT*0.5 - GAME_SIZE*0.5;
             GAME_X = WIDTH*0.5 - GAME_SIZE*0.5;
 
-            SCROLL_MARGIN = GAME_SIZE * 0.2;
+            SCROLL_MARGIN = GAME_SIZE * 0.3;
 
             if (game) {
                 game.left = GAME_X;
