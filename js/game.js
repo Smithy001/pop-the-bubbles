@@ -18,7 +18,7 @@ class Game {
         var VIRUS_BUBBLE_COLOR = '#ff0000';
         var PROJECTILE_COLOR = '#a837ff';
 
-        var bubblesMax = board_rows * board_rows;
+        var bubblesMax = worldSize * worldSize;
         var bubblesCount = 0;
         var virusCount = 0;
 
