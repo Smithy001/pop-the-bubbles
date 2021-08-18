@@ -108,6 +108,10 @@ class App {
             canvas.addEventListener('mouseup', HandleMouseUp);
             canvas.addEventListener('mousemove', HandleMouseMove);
 
+            canvas.addEventListener("contextmenu", function(e){
+                e.preventDefault();
+            }, false);
+
             window.addEventListener('resize', ResizeCanvas, true);
             ResizeCanvas();
         }
