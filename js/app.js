@@ -111,6 +111,8 @@ class App {
         function SetupGame() {
             setWorldSize();
             game = new Game(GAME_X, GAME_Y, WORLD_SIZE, GAME_ROWS, GAME_CELL_WIDTH, BUBBLE_COLOR);
+            game.scrolledRight = Math.floor(WORLD_SIZE*0.5)-Math.floor(GAME_ROWS*0.5);
+            game.scrolledDown = Math.floor(WORLD_SIZE*0.5)-Math.floor(GAME_ROWS*0.5);
         }
 
         function ResizeCanvas() {
@@ -180,6 +182,20 @@ class App {
                 GAME_SIZE-SCROLL_MARGIN*2);
 
             game.Render(context, WIDTH, HEIGHT);
+
+            let netRows = WORLD_SIZE-GAME_ROWS+1;
+            let miniMapScreenWidth = (GAME_SIZE-SCROLL_MARGIN*2)/netRows; 
+
+            context.globalAlpha = 0.75;
+            context.fillStyle = BORDER_COLOR;
+            context.fillRect(
+                GAME_X+SCROLL_MARGIN+miniMapScreenWidth*netRows*(game.scrolledRight/netRows),
+                GAME_Y+SCROLL_MARGIN+miniMapScreenWidth*netRows*(game.scrolledDown/netRows), 
+                miniMapScreenWidth, 
+                miniMapScreenWidth);
+
+            context.globalAlpha = 1;
+
             let score = document.getElementById('score');
             score.textContent = 'Time: ' + game.GetScore();
 
@@ -377,7 +393,7 @@ class App {
 
         function setWorldSize() {
             WORLD_SIZE = 1 + level * 2;
-            GAME_ROWS = Math.min(9, WORLD_SIZE);
+            GAME_ROWS = Math.min(13, WORLD_SIZE);
 
             //if (level>5) {
             //    WORLD_SIZE += 1 + Math.floor(level*0.2);

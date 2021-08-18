@@ -67,36 +67,8 @@ class Game {
 
             AddStartingResourceNodes();
 
-            
-            let endRow = board_rows-2;
-            let endCol = 2;
-            let endX = this.left + (endCol * this.cell_width) + (this.cell_width*0.5);
-            let endY = this.top + (endRow * this.cell_width) + (this.cell_width*0.5);
-
-
-            //AddResourceNode(endRow, endCol, RESOURCE_NODE_COLOR, defaultBubbleGrowthFactor*0.5);
-
-            
-/*
-
-
-            endRow = board_rows*0.5;
-            endCol = board_rows*0.5;
-            endX = this.left + (endCol * this.cell_width) + (this.cell_width*0.5);
-            endY = this.top + (endRow * this.cell_width) + (this.cell_width*0.5);
-*/
-            
-            /*
-            AddBubble(endRow, endCol, VIRUS_BUBBLE_COLOR, 0.8, true);
-            board[0][0].AddItem(new Projectile(PROJECTILE_COLOR, defaultBubbleGrowthFactor, new Vector(1, 1), 1, 10, HandleExplosion));
-
-            let center = Math.floor(board_rows*0.5);
-            board[center][center].AddItem(new Projectile(PROJECTILE_COLOR, defaultBubbleGrowthFactor, new Vector(1, 1), 1, 10, HandleExplosion));
-
-            */
-
-            if (board_rows > 10) {
-                AddBubble(board_rows-1, board_rows-1, VIRUS_BUBBLE_COLOR, 0.8, true);
+            if (WORLD_SIZE > 10) {
+                AddBubble(WORLD_SIZE-1, WORLD_SIZE-1, VIRUS_BUBBLE_COLOR, 0.8, true);
             }
         };
 
@@ -293,8 +265,8 @@ class Game {
             }
 
             if (value > 0) {
-                let centerX = board_rows / 2;
-                let centerY = board_rows / 2;
+                let centerX = WORLD_SIZE / 2;
+                let centerY = WORLD_SIZE / 2;
                 let currentDifference = GetDistanceBetweenTwoPoints(centerX, centerY, sourceX, sourceY);
                 let newDifference = GetDistanceBetweenTwoPoints(centerX, centerY, x, y);
                 let diffValue = currentDifference - newDifference;
@@ -365,7 +337,7 @@ class Game {
             bubblesCount = newBubbleCount;
             virusCount = newVirusCount;
 
-            if (board_rows > 10 && virusCount > 0) {
+            if (WORLD_SIZE > 10 && virusCount > 0) {
                 victory = false;
             }
 
@@ -573,7 +545,7 @@ class Game {
         }
 
         function AddStartingBubble() {
-            let center = Math.floor(board_rows*0.5);
+            let center = Math.floor(WORLD_SIZE*0.5);
   
             AddBubble(center, center, bubbleColor, defaultBubbleGrowthFactor)
         }
@@ -581,37 +553,37 @@ class Game {
         function AddStartingResourceNodes() {
             let resourceNodeSize = defaultBubbleGrowthFactor*0.75;
             // Level 1
-            if (board_rows == 3) {
+            if (WORLD_SIZE == 3) {
                 AddResourceNode(2, 2, RESOURCE_NODE_COLOR, resourceNodeSize);
                 //AddResourceNode(2, 0, RESOURCE_NODE_COLOR, resourceNodeSize);
                 //AddResourceNode(0, 0, RESOURCE_NODE_COLOR, resourceNodeSize);
                 //AddResourceNode(0, 2, RESOURCE_NODE_COLOR, resourceNodeSize);
             }
 
-            if (board_rows == 5) {
+            if (WORLD_SIZE == 5) {
                 AddResourceNode(0, 0, RESOURCE_NODE_COLOR, resourceNodeSize);
             }
 
-            if (board_rows > 5) {
-                AddResourceNode(board_rows-Math.floor(board_rows*0.5), board_rows-Math.floor(board_rows*0.5), RESOURCE_NODE_COLOR, resourceNodeSize);
-                AddResourceNode(0, board_rows-1, RESOURCE_NODE_COLOR, resourceNodeSize);
+            if (WORLD_SIZE > 5) {
+                AddResourceNode(WORLD_SIZE-Math.floor(WORLD_SIZE*0.5), WORLD_SIZE-Math.floor(WORLD_SIZE*0.5), RESOURCE_NODE_COLOR, resourceNodeSize);
+                AddResourceNode(0, WORLD_SIZE-1, RESOURCE_NODE_COLOR, resourceNodeSize);
             }
             
-            if (board_rows >= 9) {
+            if (WORLD_SIZE >= 9) {
                 AddResourceNode(2, 2, RESOURCE_NODE_COLOR, resourceNodeSize)
             }
 
-            if (board_rows >= 13) {
-                AddResourceNode(Math.floor(board_rows*0.8), Math.floor(board_rows*0.5), RESOURCE_NODE_COLOR, resourceNodeSize);
+            if (WORLD_SIZE >= 13) {
+                AddResourceNode(Math.floor(WORLD_SIZE*0.8), Math.floor(WORLD_SIZE*0.5), RESOURCE_NODE_COLOR, resourceNodeSize);
             }
 
-            if (board_rows >= 15) {
-                AddResourceNode(Math.floor(board_rows*0.3), Math.floor(board_rows*0.5), RESOURCE_NODE_COLOR, resourceNodeSize);
+            if (WORLD_SIZE >= 15) {
+                AddResourceNode(Math.floor(WORLD_SIZE*0.3), Math.floor(WORLD_SIZE*0.5), RESOURCE_NODE_COLOR, resourceNodeSize);
             }
 
-            if (board_rows >= 19) {
-                AddResourceNode(Math.floor(board_rows*0.5) - 1, board_rows-Math.floor(board_rows*0.3)-3, RESOURCE_NODE_COLOR, resourceNodeSize);
-                AddResourceNode(Math.floor(board_rows*0.5) - 2, board_rows-Math.floor(board_rows*0.3)-2, RESOURCE_NODE_COLOR, resourceNodeSize);
+            if (WORLD_SIZE >= 19) {
+                AddResourceNode(Math.floor(WORLD_SIZE*0.5) - 1, WORLD_SIZE-Math.floor(WORLD_SIZE*0.3)-3, RESOURCE_NODE_COLOR, resourceNodeSize);
+                AddResourceNode(Math.floor(WORLD_SIZE*0.5) - 2, WORLD_SIZE-Math.floor(WORLD_SIZE*0.3)-2, RESOURCE_NODE_COLOR, resourceNodeSize);
             }
         }
 
