@@ -24,6 +24,10 @@ class App {
         var mouseDown = false;
         var mouseMoveLimit = false;
         var scrollLimit = false;
+        var scrollMapCount = 0;
+        var showMiniMap = false;
+        var showMiniMapTimeout;
+        var showMiniMapCountTimeout;
 
         var currentTouches = [];
 
@@ -169,32 +173,37 @@ class App {
                 GAME_SIZE, 
                 GAME_SIZE);
 
-            var gradientFill = context.createLinearGradient(GAME_X,GAME_Y,GAME_SIZE,GAME_SIZE);
-                gradientFill.addColorStop(0,'#567e91');
-                gradientFill.addColorStop(1,'#244a5c');
-    
-            context.fillStyle = gradientFill;
+            if (showMiniMap && WORLD_SIZE*0.5 > GAME_ROWS) {
+                var gradientFill = context.createLinearGradient(GAME_X,GAME_Y,GAME_SIZE,GAME_SIZE);
+                    gradientFill.addColorStop(0,'#567e91');
+                    gradientFill.addColorStop(1,'#244a5c');
+        
+                context.fillStyle = gradientFill;
+                
+                context.fillRect(
+                    GAME_X+SCROLL_MARGIN, 
+                    GAME_Y+SCROLL_MARGIN, 
+                    GAME_SIZE-SCROLL_MARGIN*2, 
+                    GAME_SIZE-SCROLL_MARGIN*2);
+
+                
+
             
-            context.fillRect(
-                GAME_X+SCROLL_MARGIN, 
-                GAME_Y+SCROLL_MARGIN, 
-                GAME_SIZE-SCROLL_MARGIN*2, 
-                GAME_SIZE-SCROLL_MARGIN*2);
+                let netRows = WORLD_SIZE-GAME_ROWS+1;
+                let miniMapScreenWidth = (GAME_SIZE-SCROLL_MARGIN*2)/netRows; 
+    
+                context.globalAlpha = 0.75;
+                context.fillStyle = BORDER_COLOR;
+                context.fillRect(
+                    GAME_X+SCROLL_MARGIN+miniMapScreenWidth*netRows*(game.scrolledRight/netRows),
+                    GAME_Y+SCROLL_MARGIN+miniMapScreenWidth*netRows*(game.scrolledDown/netRows), 
+                    miniMapScreenWidth, 
+                    miniMapScreenWidth);
+    
+                context.globalAlpha = 1;
+            }
 
             game.Render(context, WIDTH, HEIGHT);
-
-            let netRows = WORLD_SIZE-GAME_ROWS+1;
-            let miniMapScreenWidth = (GAME_SIZE-SCROLL_MARGIN*2)/netRows; 
-
-            context.globalAlpha = 0.75;
-            context.fillStyle = BORDER_COLOR;
-            context.fillRect(
-                GAME_X+SCROLL_MARGIN+miniMapScreenWidth*netRows*(game.scrolledRight/netRows),
-                GAME_Y+SCROLL_MARGIN+miniMapScreenWidth*netRows*(game.scrolledDown/netRows), 
-                miniMapScreenWidth, 
-                miniMapScreenWidth);
-
-            context.globalAlpha = 1;
 
             let score = document.getElementById('score');
             score.textContent = 'Time: ' + game.GetScore();
@@ -230,9 +239,16 @@ class App {
         }
 
         function ScrollMap(x, y) {
+            
             if (scrollLimit == true) { return; }
             scrollLimit = true;
             setTimeout(function() {scrollLimit = false;}, 150);
+
+
+            
+
+
+            let scrolled = false;
 
             /*
             if (e.x < GAME_X) { return; }
@@ -242,24 +258,68 @@ class App {
             if (e.y > GAME_Y+GAME_SIZE) { return; }
 */
 
-            if (x < GAME_X) { game.scrolledRight--; }
-            if (y < GAME_Y) { game.scrolledDown--; }
+            if (x < GAME_X) { 
+                game.scrolledRight--;
+                scrolled = true;
+            }
+            if (y < GAME_Y) { 
+                game.scrolledDown--; 
+                scrolled = true;
+            }
 
-            if (x > GAME_X+GAME_SIZE) { game.scrolledRight++; }
-            if (y > GAME_Y+GAME_SIZE) { game.scrolledDown++; }
+            if (x > GAME_X+GAME_SIZE) { 
+                game.scrolledRight++;
+                scrolled = true;
+            }
+            if (y > GAME_Y+GAME_SIZE) {
+                game.scrolledDown++;
+                scrolled = true;
+            }
 
 
-            if (x < GAME_X + SCROLL_MARGIN) { game.scrolledRight--; }
-            if (y < GAME_Y + SCROLL_MARGIN) { game.scrolledDown--; }
+            if (x < GAME_X + SCROLL_MARGIN) { 
+                scrolled = true;
+                game.scrolledRight--;
+            }
+            if (y < GAME_Y + SCROLL_MARGIN) {
+                game.scrolledDown--;
+                scrolled = true;
+            }
             
-            if (x > GAME_X + GAME_SIZE - SCROLL_MARGIN) { game.scrolledRight++; }
-            if (y > GAME_Y + GAME_SIZE - SCROLL_MARGIN) { game.scrolledDown++; }
+            if (x > GAME_X + GAME_SIZE - SCROLL_MARGIN) { 
+                game.scrolledRight++;
+                scrolled = true;
+            }
+            if (y > GAME_Y + GAME_SIZE - SCROLL_MARGIN) { 
+                game.scrolledDown++;
+                scrolled = true;
+            }
 
-            if (game.scrolledRight < 0) { game.scrolledRight = 0; }
-            if (game.scrolledDown < 0) { game.scrolledDown = 0; }
+            if (game.scrolledRight < 0) { 
+                game.scrolledRight = 0;
+            }
+            if (game.scrolledDown < 0) { 
+                game.scrolledDown = 0;
+            }
 
             if (game.scrolledRight > WORLD_SIZE - GAME_ROWS) { game.scrolledRight = WORLD_SIZE - GAME_ROWS; }
             if (game.scrolledDown > WORLD_SIZE - GAME_ROWS) { game.scrolledDown = WORLD_SIZE - GAME_ROWS; }
+
+            if (!scrolled) {return;}
+
+            if (scrollMapCount > 15) {
+                showMiniMap = true;
+                clearTimeout(showMiniMapTimeout);
+                showMiniMapTimeout = setTimeout(function() {
+                    showMiniMap = false;
+                }, 3000);
+            } else {
+                scrollMapCount++;
+                clearTimeout(showMiniMapCountTimeout);
+                showMiniMapCountTimeout = setTimeout(function() {
+                    scrollMapCount=0;
+                }, 1000);
+            }
         }
 
         function HandleMouseUp(e) {

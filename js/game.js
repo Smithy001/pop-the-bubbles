@@ -23,7 +23,7 @@ class Game {
         var virusCount = 0;
 
         var MAX_ITEMS = 1000;
-        var MAX_ITEMS_PER_CELL = Math.floor(MAX_ITEMS/bubblesMax);
+        var MAX_ITEMS_PER_CELL = 5;//Math.floor(MAX_ITEMS/bubblesMax);
 
         var startTime = null;
         var currentTime = null;
@@ -620,12 +620,12 @@ class Game {
 
         function FindTarget(row, col) {
             let closestTarget = false;
-            let closestTargetIndex = 0;
+            let closestTargetIndex = -1;
 
             for(let i=0;i<virusCells.length;i++) {
                 let dist = GetDistanceBetweenTwoPoints(row, col, virusCells[i].x, virusCells[i].y);
 
-                if (!closestTarget || dist < closestTarget) {
+                if ((!closestTarget || dist < closestTarget) && dist < 10) {
                     closestTarget = dist;
                     closestTargetIndex = i;
                 }
@@ -670,13 +670,17 @@ class Game {
         
                     let target = FindTarget(row, col);
 
-                    item.destinationCol = virusCells[target].y;
-                    item.destinationRow = virusCells[target].x;
-                    item.destinationX = left + (item.destinationCol * cell_width) + (cell_width*0.5);
-                    item.destinationY = top + (item.destinationRow * cell_width) + (cell_width*0.5);
-        
-                    item.Launch(slope);
-                    return true;
+                    if (virusCells[target]) {
+                        item.destinationCol = virusCells[target].y;
+                        item.destinationRow = virusCells[target].x;
+                        item.destinationX = left + (item.destinationCol * cell_width) + (cell_width*0.5);
+                        item.destinationY = top + (item.destinationRow * cell_width) + (cell_width*0.5);
+            
+                        item.Launch(slope);
+                        return true;
+                    } else {
+                        return false;
+                    }
                 }
             }    
             return false;
