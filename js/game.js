@@ -67,6 +67,7 @@ class Game {
 
             AddStartingResourceNodes();
 
+
             if (WORLD_SIZE > 10) {
                 AddBubble(WORLD_SIZE-1, WORLD_SIZE-1, VIRUS_BUBBLE_COLOR, 0.8, true);
             }
@@ -534,6 +535,12 @@ class Game {
                     if (b.growthFactor >= bubbleGrowthFactorMax) {
                         b.growthFactor = bubbleGrowthFactorMax;
                     }
+
+                    if (!virus) {
+                        if (board[row][col].GetType('conduit')) {
+                            PassCharge(row, col, 5);
+                        }
+                    }
                 }
             }
             CreateBubbleAnimation(row, col, energy, color);
@@ -554,6 +561,10 @@ class Game {
             let center = Math.floor(WORLD_SIZE*0.5);
   
             AddBubble(center, center, bubbleColor, defaultBubbleGrowthFactor)
+
+            board[center-2][center-2].AddItem(new Conduit(center-2, center-2));
+            board[center-2][center-1].AddItem(new Conduit(center-2, center-1));
+            board[center-2][center].AddItem(new Conduit(center-2, center));
         }
 
         function AddStartingResourceNodes() {
@@ -744,6 +755,20 @@ class Game {
             return true;
         }
 
+        function PassCharge(row, col, energy) {
+            if (!board[row] || !board[row][col]) {
+                return;
+            }
+            if (!board[row][col].GetType('conduit')) {
+                energy--;
+            }
+
+            if (energy < 1) {
+                return;
+            }
+            board[row][col].PassCharge(energy, PassCharge);
+        }
+
         function Setup() {
             console.log("Game object being constructed.");
             CreateBoard();
@@ -781,10 +806,15 @@ class Cell {
             return this.items[0];
         }
 
-        this.AddItem = function(item, first, enforceLimit) {
+        this.AddItem = function(item, first, enforceLimit, uniqueType) {
             if (enforceLimit && this.items.length >= this.maxItemsPerCell) {
                 return;
             }
+
+            if (uniqueType && this.GetType(uniqueType)) {
+                return;
+            }
+
             if (first) {
                 this.items.unshift(item);
             } else {
@@ -795,6 +825,46 @@ class Cell {
         this.HandleMouseDown = function(x, y, callback) {
             if (this.items.length > 0) {
                 callback(this.row, this.col);
+            }
+        }
+
+        this.GetType = function(uniqueType) {
+            for (let i=0; i<this.items.length; i++) {
+                if (this.items[i].uniqueType && this.items[i].uniqueType == uniqueType) {
+                    return this.items[i];
+                }
+            }
+        }
+
+        this.PassCharge = function(energy, callback) {
+            let conduit = this.GetType('conduit');
+            if (conduit && conduit.MaxCharge()) {
+                let row = this.row;
+                let col = this.col;
+
+                conduit.charge = 0;
+
+                if (this.items[0] && this.items[0].Grow) {
+                    //this.items[0].Grow(this.items[0].growthFactorMax, 1);
+                    //this.items[0].growthFactor = this.items[0].growthFactorMax;
+                }
+
+                callback(row-1, col-1, energy);
+                callback(row-1, col, energy);
+                callback(row-1, col+1, energy);
+
+                callback(row, col-1, energy);
+                callback(row, col, energy);
+                callback(row, col+1, energy);
+
+                callback(row+1, col-1, energy);
+                callback(row+1, col, energy);
+                callback(row+1, col+1, energy);
+            } else {
+                if (this.items[0] && this.items[0].Grow) {
+                    //this.items[0].Grow(this.items[0].growthFactorMax, 1);
+                    this.items[0].growthFactor = this.items[0].growthFactorMax;
+                }
             }
         }
     }
@@ -1100,3 +1170,61 @@ class Projectile {
         };
     }
 } 
+
+class Conduit {
+    constructor(row, col) {
+        this.row = row;
+        this.col = col; 
+        this.uniqueType = 'conduit';        
+        this.charge = 0;
+        this.maxCharge = 50;
+
+        this.Render = function (x, y, size, context, data) {
+            
+            let largerSize = size*0.75;
+            let smallerSize = largerSize;
+            
+            let color = '#7fe3ff';
+
+            context.translate(x, y);
+            context.rotate(45 * Math.PI / 180);
+            context.translate(-(x), -(y)); 
+
+            context.fillStyle = color;
+            context.fillRect(
+                x - smallerSize*0.5, 
+                y - smallerSize*0.5, 
+                smallerSize, 
+                smallerSize);
+
+            context.setTransform(1, 0, 0, 1, 0, 0);
+
+
+            context.fillStyle = '#ffffff';
+            context.fillRect(
+                x - smallerSize*0.5, 
+                y - smallerSize*0.5, 
+                smallerSize, 
+                smallerSize);
+            
+            context.beginPath();
+            context.arc(x, y, largerSize*0.5, 0, Math.PI * 2, true);
+            context.fillStyle = color;
+            context.fill();
+
+            
+
+        }
+
+        this.MaxCharge = function() {
+            return this.charge >= this.maxCharge;
+        }
+
+        this.Grow = function (maxSize, dimFactor) {
+            if (this.charge < this.maxCharge) {
+                this.charge++;
+            }
+        }
+    }
+
+}
