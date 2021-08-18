@@ -4,13 +4,13 @@ class App {
 
         var WIDTH = window.innerWidth;
         var HEIGHT = window.innerHeight;
-        var GAME_ROWS = Math.min(21,(level * 2) + 1);
+        var GAME_ROWS;
         var WORLD_SIZE;
         
         var GAME_CELL_WIDTH, GAME_SIZE, GAME_X, GAME_Y;
-        var GAME_MARGIN = 75;
         var SCROLL_MARGIN = 0;
         var BORDER_WIDTH = 5;
+        var GAME_MARGIN = BORDER_WIDTH;
         var BACKGROUND_COLOR = '#4b6a79' // '#cbeeff';
         var BACKGROUND_COLOR_SECONDARY = '#1b3744' // '#afe4ff';
         var TEXT_COLOR = '#fff';
@@ -120,11 +120,14 @@ class App {
             canvas.width = WIDTH;
             canvas.height = HEIGHT;
 
+            setWorldSize();
+
             if (WIDTH > HEIGHT) {
                 GAME_CELL_WIDTH = (HEIGHT - GAME_MARGIN*2) / GAME_ROWS;
             } else {
                 GAME_CELL_WIDTH = (WIDTH - GAME_MARGIN*2) / GAME_ROWS;
             }
+
             GAME_SIZE = GAME_CELL_WIDTH * GAME_ROWS;
             GAME_Y = HEIGHT*0.5 - GAME_SIZE*0.5;
             GAME_X = WIDTH*0.5 - GAME_SIZE*0.5;
@@ -190,7 +193,7 @@ class App {
         function HandleNextLevelMouseDown(e) {
             document.getElementById('next_level_button').style.display = "none";
             level += 1;
-            GAME_ROWS = (level * 2) + 1;
+            setWorldSize();
             
             Main();
 
@@ -373,12 +376,14 @@ class App {
         }
 
         function setWorldSize() {
-            WORLD_SIZE = GAME_ROWS;
+            WORLD_SIZE = 1 + level * 2;
+            GAME_ROWS = Math.min(9, WORLD_SIZE);
 
-            if (level>5) {
-                WORLD_SIZE += 1 + Math.floor(level*0.2);
-            }
+            //if (level>5) {
+            //    WORLD_SIZE += 1 + Math.floor(level*0.2);
+            //}
         }
+
         Main();
     }
 }
