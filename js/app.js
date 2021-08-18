@@ -222,6 +222,9 @@ class App {
         function HandleNextLevelMouseDown(e) {
             document.getElementById('next_level_button').style.display = "none";
             level += 1;
+
+            setURLHash(level);
+            
             setWorldSize();
             
             Main();
@@ -445,6 +448,10 @@ class App {
                 return defaultValue;
             }
             return hash;
+        }
+
+        function setURLHash(value) {
+            location.hash = value;
         }
 
         function getStartingLevel() {
