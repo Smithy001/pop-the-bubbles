@@ -458,7 +458,7 @@ class Game {
 
                     if (b.virus) {
                         CreateBubbleAnimation(row, col, 0.5, '#000000')
-                        if (lastBuildCount > 2) {
+                        if (lastBuildCount > 0) {
                             RemoveBubble(row, col);
                             continue;
                         }
