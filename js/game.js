@@ -43,6 +43,10 @@ class Game {
         var poppedAlready = {};
         var alreadyBuilt = false;
 
+        var lastBuildRow = 0;
+        var lastBuildCol = 0;
+        var lastBuildCount = 0;
+
         this.getGameBoard = function() { return board; }
 
         this.GetScore = function () {
@@ -438,14 +442,35 @@ class Game {
                 }
     
                 if (b.growthFactor < minBubblePopGrowthFactor) {
-                    if (alreadyBuilt || b.virus) { 
+                    if (alreadyBuilt) { 
                         continue;
                     }
-                    
+
                     alreadyBuilt = true;
-                    if (collectedEnergy > 200) {
-                        collectedEnergy -= 200;
-                        board[row][col].energy += 200;
+
+                    if (row == lastBuildRow && col == lastBuildCol) {
+                        lastBuildCount++;
+                    } else {
+                        lastBuildRow = row;
+                        lastBuildCol = col;
+                        lastBuildCount = 0;
+                    }
+
+                    if (lastBuildCount == 0) {
+                        continue;
+                    }
+
+                    if (b.virus) {
+                        if (lastBuildCount > 2) {
+                            RemoveBubble(row, col);
+                        }
+                    }
+
+                    let collectAmount = Math.min(2000, lastBuildCount * 200);
+
+                    if (collectedEnergy > collectAmount) {
+                        collectedEnergy -= collectAmount;
+                        board[row][col].energy += collectAmount;
                     } else {
                         board[row][col].energy += collectedEnergy;
                         collectedEnergy = 0;
