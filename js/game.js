@@ -470,9 +470,10 @@ class Game {
                 if (isVirus) {
                     //energySpawlLostFactor = 0.9;
                     energyLost = b.growthFactor*0.7;
-                } else {
-                    collectedEnergy += Math.floor(energyLost * 100);
                 }
+                   
+                collectedEnergy += Math.floor(energyLost * 100);
+                
                 
                 let newBubbleEnergy =  energyLost*energySpawlLostFactor;
                 let color = bubbleColor;
