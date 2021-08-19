@@ -438,9 +438,10 @@ class Game {
                 }
     
                 if (b.growthFactor < minBubblePopGrowthFactor) {
-                    if (alreadyBuilt) { 
+                    if (alreadyBuilt || b.virus) { 
                         continue;
                     }
+                    
                     alreadyBuilt = true;
                     if (collectedEnergy > 200) {
                         collectedEnergy -= 200;
