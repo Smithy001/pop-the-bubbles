@@ -456,31 +456,44 @@ class Game {
                         lastBuildCount = 0;
                     }
 
-                    if (lastBuildCount == 0) {
-                        continue;
-                    }
+                    
 
                     if (b.virus) {
+                        CreateBubbleAnimation(row, col, 0.5, '#000000')
                         if (lastBuildCount > 2) {
                             RemoveBubble(row, col);
                             continue;
                         }
+                        continue;
                     }
 
-                    let sparkSize = Math.min(1.5, 0.5+(1*(board[row][col].energy/1000)));
+                    let collectAmount = Math.min(2000, lastBuildCount * 100);
+
+                    let sparkSize = Math.min(1, 0.25+(1*(collectAmount/500)+1*(board[row][col].energy/1000)));
                     CreateBubbleAnimation(row, col, sparkSize, '#000000', true, true);
 
-                    let collectAmount = Math.min(2000, lastBuildCount * 200);
+                    //let sparkSize = Math.min(1.5, 0.5+(1*(board[row][col].energy/1000)));
 
-                    if (collectedEnergy > collectAmount) {
-                        collectedEnergy -= collectAmount;
-                        board[row][col].energy += collectAmount;
-                    } else {
-                        board[row][col].energy += collectedEnergy;
-                        collectedEnergy = 0;
+                    if (b.virus) {
+                        continue;
                     }
 
-                    if (board[row][col].energy > 2000) {
+                    if (lastBuildCount == 0 || b.virus) {
+                        continue;
+                    }
+
+
+                    if (collectAmount > collectedEnergy) {
+                        collectAmount = collectAmount - (collectAmount-collectedEnergy);
+                    }
+
+                    collectedEnergy -= collectAmount;
+                    board[row][col].energy += collectAmount;
+
+                    //let sparkSize = Math.min(1.5, 0.5+(1*(board[row][col].energy/1000)));
+                    
+
+                    if (board[row][col].energy > 200) {
                         AddConduit(row, col);
                     }
                     continue;
@@ -546,7 +559,7 @@ class Game {
 
         function CreateBubbleAnimation(row, col, energy, color, reverse, forceAdd) {
             if (board[row] && board[row][col]) {
-                board[row][col].AddItem(new BubblePopAnimation(energy, color, reverse), forceAdd, true);
+                board[row][col].AddItem(new BubblePopAnimation(energy, color, reverse), false, forceAdd, true);
             }
         }
 
@@ -613,6 +626,11 @@ class Game {
             AddBubble(center, center, bubbleColor, defaultBubbleGrowthFactor)
 
             /*
+            AddConduit(center-2, center-2);
+            AddConduit(center-2, center-1);
+            AddConduit(center-2, center);
+            
+            
             board[center-2][center-2].AddItem(new Conduit(center-2, center-2));
             board[center-2][center-1].AddItem(new Conduit(center-2, center-1));
             board[center-2][center].AddItem(new Conduit(center-2, center));
@@ -852,6 +870,10 @@ class Cell {
         this.energy = 0;
 
         this.Render = function (x, y, size, context, data) {
+            if (!data) {
+                data = {}
+            }
+            data.energy = this.energy;
             for (let i=0; i<this.items.length; i++) {
                 if (this.items[i].Render) {
                     this.items[i].Render(x, y, size, context, data);
@@ -903,7 +925,12 @@ class Cell {
 
         this.PassCharge = function(energy, callback) {
             let conduit = this.GetType('conduit');
-            if (conduit && conduit.MaxCharge()) {
+
+            if (conduit && !conduit.Constructed()) {
+                return;
+            }
+
+            if (conduit && conduit.Constructed() && conduit.MaxCharge()) {
                 let row = this.row;
                 let col = this.col;
 
@@ -1254,15 +1281,32 @@ class Conduit {
         this.col = col; 
         this.uniqueType = 'conduit';        
         this.charge = 0;
-        this.maxCharge = 50;
+        this.maxCharge = 25;
+        
+        var energy = 1;
+        var constructionEnergy = 2000;
 
         this.Render = function (x, y, size, context, data) {
-            
-            let largerSize = size*0.75;
+            if (data && data.energy) {
+                energy = data.energy
+            }
+
+            let percentComplete = energy/constructionEnergy;
+            let renderSizeFactor = Math.min(1, 1*percentComplete);
+
+            let largerSize = size*0.75*renderSizeFactor;
+
+            if (percentComplete < 1) {
+                largerSize *= 0.8;
+            }
+
             let smallerSize = largerSize;
             
             let color = '#7fe3ff';
-
+            if (percentComplete < 0.5) {
+                color = '#ffffff';
+            }
+            
             context.translate(x, y);
             context.rotate(45 * Math.PI / 180);
             context.translate(-(x), -(y)); 
@@ -1275,22 +1319,29 @@ class Conduit {
                 smallerSize);
 
             context.setTransform(1, 0, 0, 1, 0, 0);
+    
+            if (percentComplete < 0.25) {
+                return;
+            }
 
-
-            context.fillStyle = '#ffffff';
+            if (percentComplete > 0.75) {
+                context.fillStyle = '#ffffff';
+            } else {
+                context.fillStyle = '#a9a9a9';
+            }
+ 
             context.fillRect(
                 x - smallerSize*0.5, 
                 y - smallerSize*0.5, 
                 smallerSize, 
                 smallerSize);
             
-            context.beginPath();
-            context.arc(x, y, largerSize*0.5, 0, Math.PI * 2, true);
-            context.fillStyle = color;
-            context.fill();
-
-            
-
+            if (percentComplete >= 1) {
+                context.beginPath();
+                context.arc(x, y, largerSize*0.5, 0, Math.PI * 2, true);
+                context.fillStyle = color;
+                context.fill();
+            }
         }
 
         this.MaxCharge = function() {
@@ -1301,6 +1352,10 @@ class Conduit {
             if (this.charge < this.maxCharge) {
                 this.charge++;
             }
+        }
+
+        this.Constructed = function() {
+            return (energy >= constructionEnergy);
         }
     }
 
