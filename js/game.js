@@ -49,6 +49,10 @@ class Game {
             return collectedEnergy;
         };
 
+        this.GetTime = function () {
+            return (endTime - startTime)/1000;
+        }
+
         this.Start = function () {
             console.log("Game starting.");
 

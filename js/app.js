@@ -57,11 +57,11 @@ class App {
             context.fillStyle = TEXT_COLOR;
             context.font = "3em Arial";
             context.textAlign = "center";
-            context.fillText('You won in ' + game.GetScore() + ' seconds!', WIDTH*0.5, HEIGHT*0.5)
+            context.fillText('You won in ' + game.GetTime() + ' seconds!', WIDTH*0.5, HEIGHT*0.5)
 
             context.strokeStyle = BACKGROUND_COLOR_SECONDARY;
             context.lineWidth = 1; 
-            context.strokeText('You won in ' + game.GetScore() + ' seconds!', WIDTH*0.5, HEIGHT*0.5);
+            context.strokeText('You won in ' + game.GetTime() + ' seconds!', WIDTH*0.5, HEIGHT*0.5);
 
             document.getElementById('next_level_button').style.display = "block";
         }
