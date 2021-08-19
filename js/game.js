@@ -456,8 +456,6 @@ class Game {
                         lastBuildCount = 0;
                     }
 
-                    
-
                     if (b.virus) {
                         CreateBubbleAnimation(row, col, 0.5, '#000000')
                         if (lastBuildCount > 2) {
@@ -471,8 +469,6 @@ class Game {
 
                     let sparkSize = Math.min(1, 0.25+(1*(collectAmount/500)+1*(board[row][col].energy/1000)));
                     CreateBubbleAnimation(row, col, sparkSize, '#000000', true, true);
-
-                    //let sparkSize = Math.min(1.5, 0.5+(1*(board[row][col].energy/1000)));
 
                     if (b.virus) {
                         continue;
@@ -489,9 +485,6 @@ class Game {
 
                     collectedEnergy -= collectAmount;
                     board[row][col].energy += collectAmount;
-
-                    //let sparkSize = Math.min(1.5, 0.5+(1*(board[row][col].energy/1000)));
-                    
 
                     if (board[row][col].energy > 200) {
                         AddConduit(row, col);
@@ -510,7 +503,6 @@ class Game {
                 let energyLost = b.growthFactor*0.8;
 
                 if (isVirus) {
-                    //energySpawlLostFactor = 0.9;
                     energyLost = b.growthFactor*0.7;
                 }
                    
