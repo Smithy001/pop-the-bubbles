@@ -438,7 +438,7 @@ class Game {
                 }
     
                 if (b.growthFactor < minBubblePopGrowthFactor) {
-                    if (alreadyBuilt || b.virus) { 
+                    if (alreadyBuilt) { 
                         continue;
                     }
                     
@@ -471,7 +471,7 @@ class Game {
                     //energySpawlLostFactor = 0.9;
                     energyLost = b.growthFactor*0.7;
                 }
-                   
+
                 collectedEnergy += Math.floor(energyLost * 100);
                 
                 
