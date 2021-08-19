@@ -466,9 +466,17 @@ class Game {
                     }
 
                     let collectAmount = Math.min(2000, lastBuildCount * 100);
+                    if (collectAmount > collectedEnergy) {
+                        collectAmount = collectAmount - (collectAmount-collectedEnergy);
+                    }
 
                     let sparkSize = Math.min(1, 0.25+(1*(collectAmount/500)+1*(board[row][col].energy/1000)));
-                    CreateBubbleAnimation(row, col, sparkSize, '#000000', true, true);
+
+                    if (collectAmount < 10) {
+                        CreateBubbleAnimation(row, col, sparkSize*0.5, '#000000', false, true);
+                    } else {
+                        CreateBubbleAnimation(row, col, sparkSize*0.75, '#000000', true, true);
+                    }
 
                     if (b.virus) {
                         continue;
@@ -479,10 +487,7 @@ class Game {
                     }
 
 
-                    if (collectAmount > collectedEnergy) {
-                        collectAmount = collectAmount - (collectAmount-collectedEnergy);
-                    }
-
+                    
                     collectedEnergy -= collectAmount;
                     board[row][col].energy += collectAmount;
 
@@ -1276,7 +1281,7 @@ class Conduit {
         this.maxCharge = 25;
         
         var energy = 1;
-        var constructionEnergy = 2000;
+        var constructionEnergy = 1000;
 
         this.Render = function (x, y, size, context, data) {
             if (data && data.energy) {
