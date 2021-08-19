@@ -96,7 +96,7 @@ class Game {
 
                     if (!board[i] || !board[i][j]) {continue; }
 
-                    if (board[i][j].items[0] && board[i][j].items[0].growthFactor < minBubblePopGrowthFactor) {
+                    if (board[i][j].items[0] && board[i][j].items[0].growthFactor && board[i][j].items[0].growthFactor.toFixed(2) < minBubblePopGrowthFactor) {
                         smallCell = true;
                     }
                     if (board[i][j].Render) {
@@ -306,6 +306,10 @@ class Game {
             let victory = true;
             for (let i=0; i<board.length; i++) {
                 for (let j=0; j<board.length; j++) {
+                    if (board[i][j].Grow) {
+                        board[i][j].Grow(1, 1);
+                    }
+
                     for (let h=0; h<board[i][j].items.length; h++) {
                         let item = board[i][j].items[h];
                         if (item) {
@@ -441,7 +445,7 @@ class Game {
                     console.log('You popped a bubble at ' + row + ' ' + col);
                 }
     
-                if (b.growthFactor < minBubblePopGrowthFactor) {
+                if (b.growthFactor.toFixed(2) < minBubblePopGrowthFactor) {
                     if (alreadyBuilt) { 
                         continue;
                     }
@@ -457,7 +461,7 @@ class Game {
                     }
 
                     if (b.virus) {
-                        CreateBubbleAnimation(row, col, 0.5, '#000000')
+                        CreateBubbleAnimation(row, col, 0.5, '#000000', false, false);
                         if (lastBuildCount > 0) {
                             RemoveBubble(row, col);
                             continue;
@@ -470,12 +474,21 @@ class Game {
                         collectAmount = collectAmount - (collectAmount-collectedEnergy);
                     }
 
-                    let sparkSize = Math.min(1, 0.25+(1*(collectAmount/500)+1*(board[row][col].energy/1000)));
+                    let sparkSize = Math.min(1, 0.25+(1*(collectAmount/500)+1*(board[row][col].energy/200)));
 
-                    if (collectAmount < 10) {
-                        CreateBubbleAnimation(row, col, sparkSize*0.5, '#000000', false, true);
+                    let smokeColor = '#000000';
+                    if (lastBuildCount > 0 && (collectAmount < 1 || board[row][col].energy > 1000)) {
+                        smokeColor = '#6c6c6c';
+                    }
+
+                    if (collectAmount < 1 || board[row][col].energy > 200) {
+                        CreateBubbleAnimation(row, col, sparkSize*0.5, smokeColor, false, false);
                     } else {
-                        CreateBubbleAnimation(row, col, sparkSize*0.75, '#000000', true, true);
+                        CreateBubbleAnimation(row, col, sparkSize*0.75, '#000000', true, false);
+                    }
+
+                    if(collectAmount < 1 || board[row][col].energy > 1000) {
+                        continue;
                     }
 
                     if (b.virus) {
@@ -500,7 +513,7 @@ class Game {
                 if (b.virus && !isVirus) { b.growthFactor *= 0.5; }
                 if (b.virus) { isVirus = true; }
 
-                if (b.growthFactor < minBubblePopGrowthFactor) {
+                if (b.growthFactor.toFixed(2) < minBubblePopGrowthFactor) {
                     continue;
                 }
 
@@ -554,9 +567,10 @@ class Game {
             }
         }
 
-        function CreateBubbleAnimation(row, col, energy, color, reverse, forceAdd) {
+        function CreateBubbleAnimation(row, col, energy, color, reverse, enforceLimit) {
             if (board[row] && board[row][col]) {
-                board[row][col].AddItem(new BubblePopAnimation(energy, color, reverse), false, forceAdd, true);
+
+                board[row][col].AddItem(new BubblePopAnimation(energy, color, reverse), false, enforceLimit, true);
             }
         }
 
@@ -575,7 +589,7 @@ class Game {
                 //There's already a bubble, but is it on the same side as the one that just popped?
                 
                 if ((virus && !b.virus) || (!virus && b.virus)) {
-                    if (b.growthFactor < minBubblePopGrowthFactor) {
+                    if (b.growthFactor.toFixed(2) < minBubblePopGrowthFactor) {
                         b.growthFactor = 0;
                     }
                     else {
@@ -791,7 +805,7 @@ class Game {
             
             if (!board[row] || !board[row][col]) {return alreadyUpgraded;}
             let b = board[row][col].items[0];
-            if (b && b.Pop && b.growthFactor < minBubblePopGrowthFactor) {
+            if (b && b.Pop && b.growthFactor.toFixed(2) < minBubblePopGrowthFactor) {
                 AddTower(row, col);
                 return true;
             }
@@ -875,9 +889,7 @@ class Cell {
                 if (this.items[i].Render) {
                     this.items[i].Render(x, y, size, context, data);
                 }
-                if (this.items[i].animationFinished || this.items[i].arrived) {
-                    this.items.splice(i, 1);
-                }
+                
             }
 
             if (this.items.length > 0) {
@@ -886,12 +898,21 @@ class Cell {
             }
         };
 
+        this.Grow = function (maxSize, dimFactor) {
+            for (let i=0; i<this.items.length; i++) {
+                if (this.items[i].animationFinished || this.items[i].arrived) {
+                    this.items.splice(i, 1);
+                }
+            }
+        }
+
         this.GetItem = function() {
             return this.items[0];
         }
 
         this.AddItem = function(item, first, enforceLimit, uniqueType) {
             if (enforceLimit && this.items.length >= this.maxItemsPerCell) {
+                console.log('Limit enforced');
                 return;
             }
 
@@ -1019,7 +1040,7 @@ class BubblePopAnimation {
         this.reverse = reverse;
         var dropletCount = 3;
         var droplets = [];
-        var minDropletSize = 0.005;
+        var minDropletSize = 0.02;
 
         this.animationFinished = false;
 
@@ -1035,19 +1056,28 @@ class BubblePopAnimation {
         }
 
         this.Render = function (x, y, size, context, data) {
-            let disappearedDroplets = 0;
             for (let i=0; i<droplets.length; i++) {
                 if (droplets[i].size > minDropletSize) {
                     droplets[i].Render(x, y, size, context, data);
+                }
+            }
+        };
+
+        this.Grow = function (maxSize, dimFactor) {
+            let disappearedDroplets = 0;
+            for (let i=0; i<droplets.length; i++) {
+                if (droplets[i].size > minDropletSize) {
+                    droplets[i].Grow(maxSize, dimFactor);
                 } else {
                     disappearedDroplets += 1;
                 }
             }
-            if (disappearedDroplets == droplets.length) {
+
+            if (disappearedDroplets >= droplets.length) {
                 this.animationFinished = true;
                 this.Cleanup();
             }
-        };
+        }
 
         this.Cleanup = function () {
             while (droplets.pop()) {}
@@ -1063,24 +1093,32 @@ class Droplet {
         this.x = x;
         this.y = y;
         this.size = size;
-        this.velocity = new Vector((Math.random()*size*70)-(size*50), -(Math.random()*size*50));
+        //this.velocity = new Vector((Math.random()*size*70)-(size*50), -(Math.random()*size*50));
+        this.velocity = new Vector((Math.random()*size*140)-(size*100), -(Math.random()*size*100));
 
         this.Render = function (x, y, size, context, data) {
-            if (!this.reverse) {
-                this.x += this.velocity.x;
-                this.y += this.velocity.y;
-            }
-            
-            this.velocity.x /= 1.1;
-            this.velocity.y += 0.4;
-            this.size /= 1.1;
-
             context.fillStyle = this.color;
             context.beginPath();
             context.moveTo(x+this.x, y+this.y);
             context.arc(x+this.x, y+this.y, this.size*size, 0, Math.PI * 2, true);
             context.fill();
         };
+
+        this.Grow = function (maxSize, dimFactor) {
+            if (!this.reverse) {
+                this.x += this.velocity.x;
+                this.y += this.velocity.y;
+            }
+            
+            this.velocity.x /= 1.1; //1.1;
+            this.velocity.y += 0.4; //0.4;
+            
+            if (!this.reverse) {
+                this.size /= 1.2;
+            } else {
+                this.size /= 1.1;
+            }
+        }
     }
 }
 
