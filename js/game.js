@@ -463,8 +463,12 @@ class Game {
                     if (b.virus) {
                         if (lastBuildCount > 2) {
                             RemoveBubble(row, col);
+                            continue;
                         }
                     }
+
+                    let sparkSize = Math.min(1.5, 0.5+(1*(board[row][col].energy/1000)));
+                    CreateBubbleAnimation(row, col, sparkSize, '#000000', true, true);
 
                     let collectAmount = Math.min(2000, lastBuildCount * 200);
 
@@ -540,9 +544,9 @@ class Game {
             }
         }
 
-        function CreateBubbleAnimation(row, col, energy, color) {
+        function CreateBubbleAnimation(row, col, energy, color, reverse, forceAdd) {
             if (board[row] && board[row][col]) {
-                board[row][col].AddItem(new BubblePopAnimation(energy, color), false, true);
+                board[row][col].AddItem(new BubblePopAnimation(energy, color, reverse), forceAdd, true);
             }
         }
 
@@ -987,7 +991,8 @@ class Bubble {
 
 
 class BubblePopAnimation {
-    constructor(dissolveSize, color) {
+    constructor(dissolveSize, color, reverse) {
+        this.reverse = reverse;
         var dropletCount = 3;
         var droplets = [];
         var minDropletSize = 0.005;
@@ -995,7 +1000,14 @@ class BubblePopAnimation {
         this.animationFinished = false;
 
         while( droplets.length < dropletCount ) {
-            droplets.push(new Droplet(0, 0, Math.random()*(dissolveSize*0.5), color));
+            let size = Math.random()*(dissolveSize*0.5);
+            if (reverse) {
+                size = dissolveSize*0.5;
+            }
+            droplets.push(new Droplet(0, 0, size, color, reverse));
+            if (this.reverse) {
+                break;
+            }
         }
 
         this.Render = function (x, y, size, context, data) {
@@ -1021,7 +1033,8 @@ class BubblePopAnimation {
 
 
 class Droplet {
-    constructor(x, y, size, color) {
+    constructor(x, y, size, color, reverse) {
+        this.reverse = reverse;
         this.color = color;
         this.x = x;
         this.y = y;
@@ -1029,8 +1042,11 @@ class Droplet {
         this.velocity = new Vector((Math.random()*size*70)-(size*50), -(Math.random()*size*50));
 
         this.Render = function (x, y, size, context, data) {
-            this.x += this.velocity.x;
-            this.y += this.velocity.y;
+            if (!this.reverse) {
+                this.x += this.velocity.x;
+                this.y += this.velocity.y;
+            }
+            
             this.velocity.x /= 1.1;
             this.velocity.y += 0.4;
             this.size /= 1.1;
