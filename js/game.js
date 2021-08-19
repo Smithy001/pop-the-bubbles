@@ -31,6 +31,8 @@ class Game {
         var gameStarted = false;
         var gameOver = false;
 
+        var collectedEnergy = 0;
+
         this.top = top;
         this.left = left;
         this.cell_width = cell_width;
@@ -39,17 +41,12 @@ class Game {
         this.scrolledDown = 0;
 
         var poppedAlready = {};
+        var alreadyBuilt = false;
 
         this.getGameBoard = function() { return board; }
 
         this.GetScore = function () {
-            if (!startTime) {
-                return 0;
-            }
-            if (endTime) {
-                return ((endTime - startTime)/1000).toFixed(2);
-            }
-            return ((currentTime - startTime)/1000).toFixed(2);
+            return collectedEnergy;
         };
 
         this.Start = function () {
@@ -115,9 +112,9 @@ class Game {
             let cely = this.scrolledDown + Math.floor(rely / this.cell_width);
 
             if (poppedAlready.hasOwnProperty(cely+','+celx) == true) {
-                console.log('Already popped a bubble at ' + cely + ' ' + celx);
-                console.log(poppedAlready);
-                return;
+                //console.log('Already popped a bubble at ' + cely + ' ' + celx);
+                //console.log(poppedAlready);
+                //return;
             }
 
             board[cely][celx].HandleMouseDown(x, y, PopBubble);
@@ -127,6 +124,7 @@ class Game {
             if (!gameStarted) { return; }
             
             poppedAlready = {};
+            alreadyBuilt = false;
         }
 
         function EndGame() {
@@ -418,7 +416,7 @@ class Game {
             if (poppedAlready.hasOwnProperty(row+','+col) == true) {
             //    return;
             } else {
-                //poppedAlready[row+','+col] = true;
+                poppedAlready[row+','+col] = true;
             }
 
             for (let i=0; i<board[row][col].items.length; i++) {
@@ -436,6 +434,21 @@ class Game {
                 }
     
                 if (b.growthFactor < minBubblePopGrowthFactor) {
+                    if (alreadyBuilt) { 
+                        continue;
+                    }
+                    alreadyBuilt = true;
+                    if (collectedEnergy > 200) {
+                        collectedEnergy -= 200;
+                        board[row][col].energy += 200;
+                    } else {
+                        board[row][col].energy += collectedEnergy;
+                        collectedEnergy = 0;
+                    }
+
+                    if (board[row][col].energy > 2000) {
+                        AddConduit(row, col);
+                    }
                     continue;
                 }
                 
@@ -452,6 +465,8 @@ class Game {
                 if (isVirus) {
                     //energySpawlLostFactor = 0.9;
                     energyLost = b.growthFactor*0.7;
+                } else {
+                    collectedEnergy += Math.floor(energyLost * 100);
                 }
                 
                 let newBubbleEnergy =  energyLost*energySpawlLostFactor;
@@ -562,9 +577,11 @@ class Game {
   
             AddBubble(center, center, bubbleColor, defaultBubbleGrowthFactor)
 
+            /*
             board[center-2][center-2].AddItem(new Conduit(center-2, center-2));
             board[center-2][center-1].AddItem(new Conduit(center-2, center-1));
             board[center-2][center].AddItem(new Conduit(center-2, center));
+            */
         }
 
         function AddStartingResourceNodes() {
@@ -769,6 +786,17 @@ class Game {
             board[row][col].PassCharge(energy, PassCharge);
         }
 
+        function AddConduit(row, col) {
+            if (!board[row] || !board[row][col]) {
+                return;
+            }
+            if (board[row][col].GetType('conduit')) {
+                return;
+            }
+
+            board[row][col].AddItem(new Conduit(row, col));
+        }
+
         function Setup() {
             console.log("Game object being constructed.");
             CreateBoard();
@@ -785,6 +813,8 @@ class Cell {
         this.row = row;
         this.col = col;
         this.maxItemsPerCell = maxItemsPerCell;
+
+        this.energy = 0;
 
         this.Render = function (x, y, size, context, data) {
             for (let i=0; i<this.items.length; i++) {
@@ -861,7 +891,7 @@ class Cell {
                 callback(row+1, col, energy);
                 callback(row+1, col+1, energy);
             } else {
-                if (this.items[0] && this.items[0].Grow) {
+                if (this.items[0] && this.items[0].Grow && !this.items[0].virus) {
                     //this.items[0].Grow(this.items[0].growthFactorMax, 1);
                     this.items[0].growthFactor = this.items[0].growthFactorMax;
                 }

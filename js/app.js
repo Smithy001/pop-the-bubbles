@@ -210,7 +210,7 @@ class App {
             game.Render(context, WIDTH, HEIGHT);
 
             let score = document.getElementById('score');
-            score.textContent = 'Time: ' + game.GetScore();
+            score.textContent = 'Energy: ' + game.GetScore();
 
             document.getElementById('level').textContent = 'Level: ' + level;
 
@@ -224,7 +224,7 @@ class App {
             level += 1;
 
             setURLHash(level);
-            
+
             setWorldSize();
             
             Main();
