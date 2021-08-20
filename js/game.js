@@ -431,6 +431,10 @@ class Game {
                 poppedAlready[row+','+col] = true;
             }
 
+            if(board[row][col].GetType('block')) {
+                return;
+            }
+
             for (let i=0; i<board[row][col].items.length; i++) {
                 //let b = board[row][col].GetItem();
                 let b = board[row][col].items[i];
@@ -636,16 +640,16 @@ class Game {
   
             AddBubble(center, center, bubbleColor, defaultBubbleGrowthFactor)
 
-            /*
-            AddConduit(center-2, center-2);
-            AddConduit(center-2, center-1);
-            AddConduit(center-2, center);
+            if (WORLD_SIZE > 20) {
+                board[center+2][center-2].AddItem(new Block(center-2, center-2));
+                board[center+2][center-1].AddItem(new Block(center-2, center-1));
+                board[center+2][center].AddItem(new Block(center-2, center));
+
+                board[center+2][center+5].AddItem(new Block(center-2, center-2));
+                board[center+3][center+5].AddItem(new Block(center-2, center-1));
+                board[center+4][center+5].AddItem(new Block(center-2, center));
+            }
             
-            
-            board[center-2][center-2].AddItem(new Conduit(center-2, center-2));
-            board[center-2][center-1].AddItem(new Conduit(center-2, center-1));
-            board[center-2][center].AddItem(new Conduit(center-2, center));
-            */
         }
 
         function AddStartingResourceNodes() {
@@ -911,6 +915,10 @@ class Cell {
         }
 
         this.AddItem = function(item, first, enforceLimit, uniqueType) {
+            if(this.GetType('block')) {
+                return;
+            }
+
             if (enforceLimit && this.items.length >= this.maxItemsPerCell) {
                 console.log('Limit enforced');
                 return;
@@ -1401,4 +1409,21 @@ class Conduit {
         }
     }
 
+}
+
+class Block {
+    constructor(row, col) {
+        this.row = row;
+        this.col = col; 
+        this.uniqueType = 'block';
+
+        this.Render = function (x, y, size, context, data) {
+            context.fillStyle = '#a9a9a9';
+            context.fillRect(
+                x - size*0.5, 
+                y - size*0.5, 
+                size, 
+                size);
+        }
+    }
 }
