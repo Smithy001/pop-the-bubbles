@@ -1323,7 +1323,9 @@ class Conduit {
 
         this.Render = function (x, y, size, context, data) {
             if (data && data.energy) {
-                energy = data.energy
+                if (data.energy > energy) {
+                    energy = data.energy;
+                }
             }
 
             let percentComplete = energy/constructionEnergy;
@@ -1386,6 +1388,11 @@ class Conduit {
         this.Grow = function (maxSize, dimFactor) {
             if (this.charge < this.maxCharge) {
                 this.charge++;
+            }
+
+            if (energy < constructionEnergy) {
+                energy += energy * 0.01;
+
             }
         }
 
