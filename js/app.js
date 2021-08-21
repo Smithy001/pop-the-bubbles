@@ -67,7 +67,12 @@ class App {
         }
 
         function QueueCountdown(message) {
-            
+            message.textContent = '';
+            message.style.display = 'none';
+            game.Start();
+
+
+            /*
             message.textContent = '3';
 
             setTimeout(function() { 
@@ -83,6 +88,7 @@ class App {
                 message.style.display = 'none';
                 game.Start();
             }, 3000);
+            */
         }
         
         function SetupCanvas() {
@@ -249,7 +255,7 @@ class App {
             
             if (scrollLimit == true) { return; }
             scrollLimit = true;
-            setTimeout(function() {scrollLimit = false;}, 150);
+            setTimeout(function() {scrollLimit = false;}, 50);
 
 
             
@@ -264,22 +270,28 @@ class App {
             if (e.x > GAME_X+GAME_SIZE) { return; }
             if (e.y > GAME_Y+GAME_SIZE) { return; }
 */
+            let scrollAmount = Math.min(5, (scrollMapCount*1.3).toFixed(2));
+
 
             if (x < GAME_X) { 
                 game.scrolledRight--;
+                game.screenCenterX -= scrollAmount;
                 scrolled = true;
             }
             if (y < GAME_Y) { 
                 game.scrolledDown--; 
+                game.screenCenterY -= scrollAmount;
                 scrolled = true;
             }
 
             if (x > GAME_X+GAME_SIZE) { 
                 game.scrolledRight++;
+                game.screenCenterX += scrollAmount;
                 scrolled = true;
             }
             if (y > GAME_Y+GAME_SIZE) {
                 game.scrolledDown++;
+                game.screenCenterY += scrollAmount;
                 scrolled = true;
             }
 
@@ -287,18 +299,22 @@ class App {
             if (x < GAME_X + SCROLL_MARGIN) { 
                 scrolled = true;
                 game.scrolledRight--;
+                game.screenCenterX -= scrollAmount;
             }
             if (y < GAME_Y + SCROLL_MARGIN) {
                 game.scrolledDown--;
+                game.screenCenterY -= scrollAmount;
                 scrolled = true;
             }
             
             if (x > GAME_X + GAME_SIZE - SCROLL_MARGIN) { 
                 game.scrolledRight++;
+                game.screenCenterX += scrollAmount;
                 scrolled = true;
             }
             if (y > GAME_Y + GAME_SIZE - SCROLL_MARGIN) { 
                 game.scrolledDown++;
+                game.screenCenterY += scrollAmount;
                 scrolled = true;
             }
 
@@ -315,17 +331,21 @@ class App {
             if (!scrolled) {return;}
 
             if (scrollMapCount > 15) {
+                /*
                 showMiniMap = true;
                 clearTimeout(showMiniMapTimeout);
                 showMiniMapTimeout = setTimeout(function() {
                     showMiniMap = false;
                 }, 3000);
+                */
             } else {
                 scrollMapCount++;
+                /*
                 clearTimeout(showMiniMapCountTimeout);
                 showMiniMapCountTimeout = setTimeout(function() {
                     scrollMapCount=0;
                 }, 1000);
+                */
             }
         }
 
@@ -338,7 +358,7 @@ class App {
         function HandleMouseMove(e) {
             let row = Math.floor((e.y - game.top) / game.cell_width);
             let col = Math.floor((e.x - game.left) / game.cell_width);
-            let textContent = e.x + ', ' + e.y + '. Row: ' + row + ', Col: ' + col;
+            let textContent = e.x + ', ' + e.y + '. WorldScreenCenter X: ' + game.screenCenterX + ', WorldScreenCenter Y: ' + game.screenCenterY;
             document.getElementById('debug').textContent = textContent;
 
             if (!mouseDown) { return; }
@@ -463,8 +483,8 @@ class App {
         }
 
         function setWorldSize() {
-            WORLD_SIZE = 1 + level * 2;
-            GAME_ROWS = Math.min(13, WORLD_SIZE);
+            WORLD_SIZE = 50; //1 + level * 2;
+            GAME_ROWS = 13; //Math.min(13, WORLD_SIZE);
 
             //if (level>5) {
             //    WORLD_SIZE += 1 + Math.floor(level*0.2);

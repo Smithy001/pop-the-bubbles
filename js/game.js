@@ -47,7 +47,33 @@ class Game {
         var lastBuildCol = 0;
         var lastBuildCount = 0;
 
+        var worldItems = [];
+
+        var playerId;
+
+        this.screenCenterX = 0;
+        this.screenCenterY = 0;
+
+        function hashCode(string) {
+            var hash = 0, i, chr;
+            if (string.length === 0) return hash;
+            for (i = 0; i < string.length; i++) {
+              chr   = string.charCodeAt(i);
+              hash  = ((hash << 5) - hash) + chr;
+              hash |= 0; // Convert to 32bit integer
+            }
+            return hash;
+          };
+
         this.getGameBoard = function() { return board; }
+
+        this.GetPlayer = function() {
+            return worldItems[playerId];
+        }
+
+        this.GetDistanceFromPlayer = function(x, y) {
+            return GetDistanceBetweenTwoPoints(x, y, worldItems[playerId].screenX, worldItems[playerId].screenY);
+        }
 
         this.GetScore = function () {
             return collectedEnergy;
@@ -57,25 +83,54 @@ class Game {
             return (endTime - startTime)/1000;
         }
 
+        function GenerateId() {
+            return hashCode(Math.random().toString());
+        }
+
         this.Start = function () {
             console.log("Game starting.");
 
             gameStarted = true;
             startTime = Date.now();
             currentTime = startTime;
-            eventLoop = setInterval(EventLoop, EVENT_LOOP_MS);
-            aiLoop = setInterval(AiLoop, EVENT_LOOP_MS);
 
-            virusChoicePower = 0;
+            let player = AddItemToWorld(new Player(0, 0));
+            playerId = player.id;
 
-            AddStartingBubble();
+            AddItemToWorld(new Block(0, 30, 400, true));
+            AddItemToWorld(new Block(0, 60, 400, true));
+            AddItemToWorld(new Block(30, 60, 400, false));
+            AddItemToWorld(new Block(30, 120, 400, false));
+            AddItemToWorld(new Block(200, 120, 400, false));
+            AddItemToWorld(new Block(0, 90, 400, true));
+            AddItemToWorld(new Block(0, 120, 400, false));
 
-            AddStartingResourceNodes();
+/*
+            AddItemToWorld(new Block(0, 31, 200));
+            AddItemToWorld(new Block(31, 31, 400));
+            AddItemToWorld(new Block(80, 120, 400));
+            AddItemToWorld(new Block(-50, 70, 800));
+*/
+
+            eventLoop = setInterval(WorldEventLoop, EVENT_LOOP_MS);
+
+            
 
 
-            if (WORLD_SIZE > 10) {
-                AddBubble(WORLD_SIZE-1, WORLD_SIZE-1, VIRUS_BUBBLE_COLOR, 0.8, true);
-            }
+
+            //eventLoop = setInterval(EventLoop, EVENT_LOOP_MS);
+            //aiLoop = setInterval(AiLoop, EVENT_LOOP_MS);
+
+            //virusChoicePower = 0;
+
+            //AddStartingBubble();
+
+            //AddStartingResourceNodes();
+
+
+            //if (WORLD_SIZE > 10) {
+            //    AddBubble(WORLD_SIZE-1, WORLD_SIZE-1, VIRUS_BUBBLE_COLOR, 0.8, true);
+            //}
         };
 
         this.End = function () {
@@ -85,6 +140,96 @@ class Game {
         this.GameOver = function () {
             return gameOver;
         }
+
+        function WorldEventLoop() {
+            
+            currentTime += EVENT_LOOP_MS;
+
+            let keys = Object.keys(worldItems);
+            for(let i=0;i<keys.length;i++) {
+                let item = worldItems[keys[i]];
+                if (item.dispose) {
+                    delete worldItems[keys[i]];
+                } else {
+                    CheckPlayerEvents(item);
+                }
+            }
+            
+        }
+
+        function CheckPlayerEvents(item) {
+            if (item.id == playerId) {
+                let keys = Object.keys(worldItems);
+                for(let i=0;i<keys.length;i++) {
+                    let otherItem = worldItems[keys[i]];
+                    if (otherItem.id == playerId) {
+                        continue;
+                    }
+                    if (GetDistanceBetweenTwoPoints(otherItem.x, otherItem.y, item.x, item.y) < Math.sqrt(item.screenSize+otherItem.screenSize)) {
+                        if (otherItem.Touch) {
+                            otherItem.Touch(item);
+                        }
+                    }
+                }
+            }
+            item.Tick();
+        }
+
+        this.GetWorldItems = function() {
+            return worldItems;
+        }
+
+        this.Render = function (context) {
+
+            let keys = Object.keys(worldItems);
+            for(let i=0;i<keys.length;i++) {
+                let item = worldItems[keys[i]];
+                
+                let screenWidth = this.cell_width * board_rows;
+                let screenHeight = this.cell_width * board_rows;
+
+                let x = this.left - (this.screenCenterX + item.x) + screenWidth*0.5;
+                let y = this.top - (this.screenCenterY + item.y) + screenHeight*0.5;
+ 
+                if ((x-item.size*0.5>this.left-item.size*0.5 &&
+                    y-item.size*0.5>this.top-item.size*0.5) &&
+                    (x-item.size*0.5<this.left+screenWidth-item.size*0.5 &&
+                    y-item.size*0.5<this.top+screenHeight-item.size*0.5)) {
+                    item.Render(x, y, this.cell_width/screenWidth, context);
+                }
+            }
+
+            
+
+            return;
+
+            for (let i=this.scrolledDown; i<(board_rows + this.scrolledDown); i++) {
+                for (let j=this.scrolledRight; j<(board_rows + this.scrolledRight); j++) {
+                    let x = this.left - (this.scrolledRight * this.cell_width) + (j * this.cell_width) + (this.cell_width*0.5);
+                    let y = this.top - (this.scrolledDown * this.cell_width) + (i * this.cell_width) + (this.cell_width*0.5);
+
+                    let smallCell = false;
+
+                    if (!board[i] || !board[i][j]) {continue; }
+
+                    if (board[i][j].items[0] && board[i][j].items[0].growthFactor && board[i][j].items[0].growthFactor.toFixed(2) < minBubblePopGrowthFactor) {
+                        smallCell = true;
+                    }
+                    if (board[i][j].Render) {
+                        board[i][j].Render(x, y, this.cell_width, context, {'smallCell': smallCell});
+                    }
+                }
+            }
+        };
+
+
+        function AddPlayerDart(x, y) {
+            
+        }
+
+        /*
+
+
 
         this.Render = function (context) {
             for (let i=this.scrolledDown; i<(board_rows + this.scrolledDown); i++) {
@@ -106,6 +251,9 @@ class Game {
             }
         };
 
+
+        */
+
         this.HandleMouseDown = function(x, y) {
             if (!gameStarted) { return; }
             
@@ -125,7 +273,23 @@ class Game {
                 //return;
             }
 
-            board[cely][celx].HandleMouseDown(x, y, PopBubble);
+            let screenWidth = this.cell_width * board_rows;
+            let screenHeight = this.cell_width * board_rows;
+
+            let worldX = this.left - (this.screenCenterX + x) + screenWidth*0.5;
+            let worldY = this.top - (this.screenCenterY + y) + screenHeight*0.5;
+
+            worldItems[playerId].destX = worldX;
+            worldItems[playerId].destY = worldY;
+
+            AddItemToWorld(new BubblePopAnimation(worldX, worldY, 0.5, '#000000', false));
+            //board[cely][celx].HandleMouseDown(x, y, PopBubble);
+        }
+
+        function AddItemToWorld(item) {
+            item.id = GenerateId();
+            worldItems[item.id] = item;
+            return item;
         }
 
         this.HandleMouseUp = function() {
@@ -1044,25 +1208,30 @@ class Bubble {
 
 
 class BubblePopAnimation {
-    constructor(dissolveSize, color, reverse) {
+    constructor(x, y, dissolveSize, color, reverse) {
+        this.x = x;
+        this.y = y;
+        this.size = 0;
         this.reverse = reverse;
         var dropletCount = 3;
         var droplets = [];
-        var minDropletSize = 0.02;
+        var minDropletSize = 1;
 
         this.animationFinished = false;
+        this.dispose = false;
 
         while( droplets.length < dropletCount ) {
-            let size = Math.random()*(dissolveSize*0.5);
-            if (reverse) {
-                size = dissolveSize*0.5;
-            }
+            //let size = Math.random()*(10*0.5);
+            //if (reverse) {
+            //    size = dissolveSize*0.5;
+            //}
+            let size = 50;
             droplets.push(new Droplet(0, 0, size, color, reverse));
             if (this.reverse) {
                 break;
             }
         }
-
+this.size = 0;
         this.Render = function (x, y, size, context, data) {
             for (let i=0; i<droplets.length; i++) {
                 if (droplets[i].size > minDropletSize) {
@@ -1087,8 +1256,25 @@ class BubblePopAnimation {
             }
         }
 
+        this.Tick = function() {
+            let disappearedDroplets = 0;
+            for (let i=0; i<droplets.length; i++) {
+                if (droplets[i].size > minDropletSize) {
+                    droplets[i].Grow(1, 1);
+                } else {
+                    disappearedDroplets += 1;
+                }
+            }
+
+            if (disappearedDroplets >= droplets.length) {
+                this.animationFinished = true;
+                this.Cleanup();
+            }
+        }
+
         this.Cleanup = function () {
             while (droplets.pop()) {}
+            this.dispose = true;
         };
     }
 }
@@ -1102,7 +1288,8 @@ class Droplet {
         this.y = y;
         this.size = size;
         //this.velocity = new Vector((Math.random()*size*70)-(size*50), -(Math.random()*size*50));
-        this.velocity = new Vector((Math.random()*size*140)-(size*100), -(Math.random()*size*100));
+        //this.velocity = new Vector((Math.random()*size*140)-(size*100), -(Math.random()*size*100));
+        this.velocity = new Vector((Math.random()*size*0.5)-(size*0.2), -(Math.random()*size*0.2));
 
         this.Render = function (x, y, size, context, data) {
             context.fillStyle = this.color;
@@ -1113,19 +1300,19 @@ class Droplet {
         };
 
         this.Grow = function (maxSize, dimFactor) {
-            if (!this.reverse) {
+            //if (!this.reverse) {
                 this.x += this.velocity.x;
                 this.y += this.velocity.y;
-            }
+            //}
             
-            this.velocity.x /= 1.1; //1.1;
-            this.velocity.y += 0.4; //0.4;
+            this.velocity.x /= 1.01; //1.1;
+            this.velocity.y += 0.04; //0.4;
             
-            if (!this.reverse) {
+            //if (!this.reverse) {
                 this.size /= 1.2;
-            } else {
-                this.size /= 1.1;
-            }
+            //} else {
+                //this.size /= 1.1;
+            //}
         }
     }
 }
@@ -1191,6 +1378,16 @@ class Tower {
                 buildAction(row, col);
             }
         };
+
+        this.Render = function (x, y, size, context, data) {
+            let renderSize = size * 0.5;
+            context.fillStyle = '#a9a9a9';
+            context.fillRect(
+                x - renderSize*0.5, 
+                y - renderSize*0.5, 
+                renderSize, 
+                renderSize);
+        }
     };
 }
 
@@ -1412,18 +1609,119 @@ class Conduit {
 }
 
 class Block {
-    constructor(row, col) {
-        this.row = row;
-        this.col = col; 
-        this.uniqueType = 'block';
+    constructor(x, y, size, light) {
+        this.x = x;
+        this.y = y; 
+        this.size = size;
+        this.screenSize = this.size;
+        this.screenX = x;
+        this.screenY = y;
+        this.light = light;
 
-        this.Render = function (x, y, size, context, data) {
-            context.fillStyle = '#a9a9a9';
+        this.Render = function (clientX, clientY, size, context, data) {
+            this.screenX = clientX;
+            this.screenY = clientY;
+            let renderSize = this.size*size;
+            this.screenSize = renderSize;
+
+            if (this.light) {
+                context.fillStyle = '#a9a9a9';
+            } else {
+                context.fillStyle = '#6c6c6c';
+            }
+            
             context.fillRect(
-                x - size*0.5, 
-                y - size*0.5, 
-                size, 
-                size);
+                clientX - renderSize*0.5, 
+                clientY - renderSize*0.5, 
+                renderSize,
+                renderSize);
+        }
+
+        this.Tick = function() {
+
+        }
+
+        this.Touch = function(player) {
+            let angle = Math.atan2(player.y-this.y, player.x-this.x);
+
+            if (this.light) {
+                this.x -= player.speed * Math.cos(angle);
+                this.y -= player.speed * Math.sin(angle);
+            } else {
+                player.x += player.speed * Math.cos(angle);
+                player.y += player.speed * Math.sin(angle);
+            }
+        }
+    }
+}
+
+class Player {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.destX = x;
+        this.destY = y;
+        this.angle = 0;
+        this.speed = 10;
+        this.size = 400;
+        this.screenSize = this.size;
+        this.screenX = x;
+        this.screenY = y;
+
+        this.Render = function (clientX, clientY, size, context, data) {
+            this.screenX = clientX;
+            this.screenY = clientY;
+            let renderSize = this.size*size;
+            this.screenSize = renderSize;
+            let arcSize = renderSize*0.5;
+            
+            context.fillStyle = '#00c8ff';
+
+            context.beginPath();
+            context.arc(clientX, clientY, arcSize, 0, Math.PI * 2, true);
+            context.fillStyle = this.color;
+            context.fill();
+        }
+
+        this.ChangeAngle = function(angle) {
+            this.angle = angle;
+        }
+
+        this.SetDestination = function(x, y) {
+            this.destX = x;
+            this.destY = y;
+        }
+
+        this.Tick = function() {
+            if (Math.abs(this.x-this.destX) <= this.speed && Math.abs(this.y-this.destY) <= this.speed){
+                return;
+                
+            } 
+
+            let angle = Math.atan2(this.y-this.destY, this.x-this.destX);
+
+            this.x -= this.speed * Math.cos(angle);
+            this.y -= this.speed * Math.sin(angle);
+
+            /*
+            if (this.x < this.destX) {
+                this.x += this.speed;
+            }
+
+            if (this.x > this.destX) {
+                this.x -= this.speed;
+            }
+
+
+            if (this.y < this.destY) {
+                this.y += this.speed;
+            }
+
+            if (this.y > this.destY) {
+                this.y -= this.speed;
+            }
+
+            */
         }
     }
 }
